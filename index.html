@@ -90,7 +90,7 @@
             </button>
         </div>
 
-        <!-- 1. قسم كتابة ونشر البوستات (حتى 10 صور) -->
+        <!-- 1. قسم كتابة ونشر البوستات -->
         <section id="sec-posts" class="space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-800">
@@ -174,23 +174,19 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-[550px] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
-                    <!-- قائمة المحادثات -->
                     <div class="border-b md:border-b-0 md:border-l border-slate-800 overflow-y-auto p-2 space-y-1.5 bg-slate-900/40" id="inboxUsersList">
                         <p class="text-center text-xs text-slate-500 py-10">لا توجد رسائل واردة حتى الآن</p>
                     </div>
 
-                    <!-- نافذة المحادثة المفتوحة وحقل الرد -->
                     <div class="md:col-span-2 flex flex-col justify-between bg-slate-950">
                         <div class="p-3.5 bg-slate-900/80 border-b border-slate-800 flex justify-between items-center" id="activeChatHeader">
                             <span class="text-xs font-bold text-slate-400">حدد محادثة من القائمة للرد عليها</span>
                         </div>
 
-                        <!-- فقاعات الشات -->
                         <div class="flex-1 p-4 overflow-y-auto space-y-3" id="activeChatBody">
                             <div class="text-center text-xs text-slate-600 py-20">اختر أحد العملاء لبدء المراسلة الفورية</div>
                         </div>
 
-                        <!-- إرسال الرد -->
                         <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2" id="replyFormContainer" style="display: none;">
                             <input type="text" id="adminReplyTextInput" placeholder="اكتب ردك للعميل هنا..." onkeypress="if(event.key==='Enter') sendAdminReply()"
                                 class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
@@ -216,7 +212,6 @@
 
     <!-- سكربت الربط السحابي والتحكم -->
     <script>
-        // 1. بيانات الفايربيس (مطابقة تماماً للموقع)
         const firebaseConfig = {
             apiKey: "AIzaSyBa2TuKhZf4i3sMWOo7m11OXjZ8h02YTFY",
             authDomain: "home-page-2d0db.firebaseapp.com",
@@ -230,7 +225,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 2. التحقق من رمز المرور 108
         function checkPin() {
             const input = document.getElementById('pinInput').value.trim();
             if (input === '108') {
@@ -261,7 +255,6 @@
             }
         });
 
-        // 3. التبديل بين التبويبات
         function switchTab(tabId) {
             document.getElementById('sec-posts').classList.add('hidden');
             document.getElementById('sec-manage').classList.add('hidden');
@@ -284,7 +277,6 @@
             }
         }
 
-        // 4. ضغط ومعالجة حتى 10 صور
         let currentPostImages = [];
 
         function compressImage(file) {
@@ -298,7 +290,7 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const maxDim = 1000;
+                        const maxDim = 800;
                         if (width > height && width > maxDim) {
                             height = Math.round((height * maxDim) / width);
                             width = maxDim;
@@ -310,7 +302,7 @@
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.75));
+                        resolve(canvas.toDataURL('image/jpeg', 0.65));
                     };
                 };
             });
@@ -339,7 +331,9 @@
         function renderImagePreviews() {
             const container = document.getElementById('imagePreviewContainer');
             const counter = document.getElementById('imagesCountBadge');
-            counter.innerText = `${currentPostImages.length} / 10 صور`;
+            if (counter) counter.innerText = `${currentPostImages.length} / 10 صور`;
+
+            if (!container) return;
 
             if (currentPostImages.length === 0) {
                 container.classList.add('hidden');
@@ -358,23 +352,23 @@
             `).join('');
         }
 
-        // 5. حفظ أو تعديل المنشور
         async function handlePostSubmit(event) {
             event.preventDefault();
             const text = document.getElementById('postTextInput').value.trim();
             const editId = document.getElementById('editPostDocId').value;
             const submitBtn = document.getElementById('submitPostBtn');
+            const submitText = document.getElementById('submitBtnText');
 
             if (!text && currentPostImages.length === 0) {
                 showToast('يرجى كتابة نص أو إضافة صورة واحدة على الأقل');
                 return;
             }
 
-            submitBtn.disabled = true;
+            if (submitBtn) submitBtn.disabled = true;
+            if (submitText) submitText.innerText = editId ? 'جاري حفظ التعديل...' : 'جاري النشر سحابياً...';
 
             try {
                 if (editId) {
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري حفظ التعديل...';
                     await db.collection("posts").doc(editId).update({
                         text: text,
                         images: currentPostImages,
@@ -382,7 +376,6 @@
                     });
                     showToast('تم تعديل المنشور بنجاح في السحابة! ✨');
                 } else {
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النشر سحابياً...';
                     await db.collection("posts").add({
                         text: text,
                         images: currentPostImages,
@@ -397,39 +390,50 @@
                 resetPostForm();
                 switchTab('tab-manage');
             } catch (err) {
-                console.error(err);
-                showToast('حدث خطأ أثناء الحفظ بالسحابة');
+                console.error("Firestore Error:", err);
+                showToast('خطأ: ' + (err.message || 'حدث خطأ أثناء الحفظ بالسحابة'));
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span id="submitBtnText">نشر المنشور على الصفحة سحابياً</span>';
+                if (submitBtn) submitBtn.disabled = false;
+                if (submitText) submitText.innerText = 'نشر المنشور على الصفحة سحابياً';
             }
         }
 
         function resetPostForm() {
-            document.getElementById('editPostDocId').value = '';
-            document.getElementById('postTextInput').value = '';
-            document.getElementById('formHeaderTitle').innerHTML = '<i class="fas fa-edit text-rose-500"></i><span>كتابة منشور جديد على الصفحة</span>';
-            document.getElementById('submitBtnText').innerText = 'نشر المنشور على الصفحة سحابياً';
-            document.getElementById('editModeIndicator').classList.add('hidden');
-            document.getElementById('cancelEditBtn').classList.add('hidden');
+            const editDocId = document.getElementById('editPostDocId');
+            const postText = document.getElementById('postTextInput');
+            const formTitle = document.getElementById('formHeaderTitle');
+            const submitText = document.getElementById('submitBtnText');
+            const editIndicator = document.getElementById('editModeIndicator');
+            const cancelBtn = document.getElementById('cancelEditBtn');
+
+            if (editDocId) editDocId.value = '';
+            if (postText) postText.value = '';
+            if (formTitle) formTitle.innerHTML = '<i class="fas fa-edit text-rose-500"></i><span>كتابة منشور جديد على الصفحة</span>';
+            if (submitText) submitText.innerText = 'نشر المنشور على الصفحة سحابياً';
+            if (editIndicator) editIndicator.classList.add('hidden');
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+
             currentPostImages = [];
             renderImagePreviews();
         }
 
-        // 6. جلب المنشورات وإدارتها وحذفها
         let cloudPosts = [];
 
         function initRealtimeListeners() {
             db.collection("posts").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
                 cloudPosts = [];
-                document.getElementById('postsTotalCount').innerText = snapshot.size;
+                const totalEl = document.getElementById('postsTotalCount');
+                if (totalEl) totalEl.innerText = snapshot.size;
+
+                const listEl = document.getElementById('adminPostsList');
+                if (!listEl) return;
 
                 if (snapshot.empty) {
-                    document.getElementById('adminPostsList').innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">لا توجد أي منشورات حتى الآن.</p>';
+                    listEl.innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">لا توجد أي منشورات حتى الآن.</p>';
                     return;
                 }
 
-                document.getElementById('adminPostsList').innerHTML = '';
+                listEl.innerHTML = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     cloudPosts.push({ id: doc.id, data: data });
@@ -459,7 +463,7 @@
                             </button>
                         </div>
                     `;
-                    document.getElementById('adminPostsList').appendChild(card);
+                    listEl.appendChild(card);
                 });
             });
 
@@ -495,7 +499,6 @@
             }
         }
 
-        // 7. استقبال ورسائل ماسنجر اللحظية والرد عليها
         let activeChatVisitorId = null;
         let allConversations = [];
 
@@ -504,6 +507,8 @@
                 allConversations = [];
                 let unreadCount = 0;
                 const usersList = document.getElementById('inboxUsersList');
+
+                if (!usersList) return;
 
                 if (snapshot.empty) {
                     usersList.innerHTML = '<p class="text-center text-xs text-slate-500 py-10">لا توجد رسائل واردة حتى الآن</p>';
@@ -545,11 +550,13 @@
                 });
 
                 const badge = document.getElementById('unreadMessagesBadge');
-                if (unreadCount > 0) {
-                    badge.classList.remove('hidden');
-                    badge.innerText = unreadCount;
-                } else {
-                    badge.classList.add('hidden');
+                if (badge) {
+                    if (unreadCount > 0) {
+                        badge.classList.remove('hidden');
+                        badge.innerText = unreadCount;
+                    } else {
+                        badge.classList.add('hidden');
+                    }
                 }
 
                 if (activeChatVisitorId) {
@@ -560,7 +567,8 @@
 
         function selectVisitorChat(visitorDocId) {
             activeChatVisitorId = visitorDocId;
-            document.getElementById('replyFormContainer').style.display = 'flex';
+            const formContainer = document.getElementById('replyFormContainer');
+            if (formContainer) formContainer.style.display = 'flex';
 
             db.collection("messages").doc(visitorDocId).update({
                 isReadByAdmin: true
@@ -573,15 +581,19 @@
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
 
-            document.getElementById('activeChatHeader').innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                    <span class="text-xs font-black text-white">محادثة العميل: ${escapeHtml(chat.visitorName || 'زائر')}</span>
-                </div>
-                <span class="text-[10px] text-slate-500 num-en">المعرف: ${chat.id}</span>
-            `;
+            const headerEl = document.getElementById('activeChatHeader');
+            if (headerEl) {
+                headerEl.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                        <span class="text-xs font-black text-white">محادثة العميل: ${escapeHtml(chat.visitorName || 'زائر')}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 num-en">المعرف: ${chat.id}</span>
+                `;
+            }
 
             const body = document.getElementById('activeChatBody');
+            if (!body) return;
             body.innerHTML = '';
 
             const msgs = chat.messages || [];
@@ -634,9 +646,9 @@
             }
         }
 
-        // إشعارات التنبيه
         function showToast(msg) {
             const toast = document.getElementById('toastBox');
+            if (!toast) return;
             toast.innerText = msg;
             toast.classList.remove('opacity-0', 'translate-y-24');
             toast.classList.add('opacity-100', 'translate-y-0');
