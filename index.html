@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة الإدارة السحابية - المهندس محمد السعيد</title>
     
-    <!-- Google Fonts & Font Awesome -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -73,32 +71,36 @@
 
         <!-- أزرار التبويبات -->
         <div class="flex flex-wrap gap-2.5 bg-slate-900/60 p-2 rounded-2xl border border-slate-800">
-            <button onclick="switchTab('tab-posts')" id="btn-tab-posts" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/20">
+            <button onclick="switchTab('tab-posts')" id="btn-tab-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/20">
                 <i class="fas fa-pen-nib"></i>
                 <span>نشر رسمي</span>
             </button>
-            <button onclick="switchTab('tab-pending-posts')" id="btn-tab-pending-posts" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
+            <button onclick="switchTab('tab-pending-posts')" id="btn-tab-pending-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
                 <i class="fas fa-clock text-amber-400"></i>
-                <span>مراجعة مشاكل الزوار</span>
+                <span>مراجعة المشاكل</span>
                 <span id="pendingPostsBadge" class="hidden bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-bounce">0</span>
             </button>
-            <button onclick="switchTab('tab-manage')" id="btn-tab-manage" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80">
+            <button onclick="switchTab('tab-manage')" id="btn-tab-manage" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80">
                 <i class="fas fa-layer-group"></i>
-                <span>المنشورات المعتمدة (<span id="postsTotalCount" class="num-en">0</span>)</span>
+                <span>المنشورات (<span id="postsTotalCount" class="num-en">0</span>)</span>
             </button>
-            <button onclick="switchTab('tab-comments')" id="btn-tab-comments" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
+            <button onclick="switchTab('tab-comments')" id="btn-tab-comments" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
                 <i class="fas fa-comments text-sky-400"></i>
-                <span>مراجعة التعليقات</span>
+                <span>التعليقات</span>
                 <span id="pendingCommentsBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
-            <button onclick="switchTab('tab-messages')" id="btn-tab-messages" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
-                <i class="fas fa-comments text-sky-400"></i>
+            <button onclick="switchTab('tab-messages')" id="btn-tab-messages" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
+                <i class="fas fa-envelope text-sky-400"></i>
                 <span>الرسائل</span>
                 <span id="unreadMessagesBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
+            <button onclick="switchTab('tab-banned')" id="btn-tab-banned" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-red-400 hover:text-red-300 border border-red-500/30 relative">
+                <i class="fas fa-ban text-red-500"></i>
+                <span>المحظورين (<span id="bannedTotalCount" class="num-en">0</span>)</span>
+            </button>
         </div>
 
-        <!-- 1. نشر رسمي من الأدمن -->
+        <!-- 1. نشر رسمي -->
         <section id="sec-posts" class="space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-800">
@@ -222,9 +224,33 @@
             </div>
         </section>
 
+        <!-- 6. تبويب إدارة المحظورين -->
+        <section id="sec-banned" class="hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-6">
+                <div>
+                    <h2 class="font-black text-lg text-white flex items-center gap-2">
+                        <i class="fas fa-ban text-red-500"></i>
+                        <span>إدارة الأجهزة والمستخدمين المحظورين</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">يمكنك حظر أي مستخدم يدوياً أو إلغاء الحظر عنه ليعود الموقع للعمل معه فوراً</p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-wrap gap-3 items-center">
+                    <input type="text" id="manualBanInput" placeholder="اكتب معرّف أو اسم الشخص لحظره يدوياً..." 
+                        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:border-red-500 outline-none">
+                    <button onclick="manualBanUser()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-lg shadow-red-600/20">
+                        <i class="fas fa-ban"></i> حظر فوري
+                    </button>
+                </div>
+
+                <div id="bannedUsersList" class="space-y-3">
+                    <p class="text-center py-8 text-slate-500 text-sm">جاري جلب قائمة المحظورين...</p>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- إشعار التنبيه -->
     <div id="toastBox" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-rose-500/50 text-white font-bold px-6 py-3 rounded-2xl shadow-2xl shadow-rose-500/20 transition-all duration-300 transform translate-y-24 opacity-0 z-[1000] text-sm"></div>
 
     <footer class="text-center py-4 border-t border-slate-900 text-xs text-slate-600">
@@ -281,15 +307,16 @@
             document.getElementById('sec-manage').classList.add('hidden');
             document.getElementById('sec-comments').classList.add('hidden');
             document.getElementById('sec-messages').classList.add('hidden');
+            document.getElementById('sec-banned').classList.add('hidden');
 
             const tabBtns = document.querySelectorAll('.tab-btn');
             tabBtns.forEach(btn => {
-                btn.className = "tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative";
+                btn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative";
             });
 
             const activeBtn = document.getElementById(`btn-${tabId}`);
             if (activeBtn) {
-                activeBtn.className = "tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/20 relative";
+                activeBtn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-gradient-to-r from-rose-600 to-purple-600 text-white shadow-lg shadow-rose-500/20 relative";
             }
 
             if (tabId === 'tab-posts') document.getElementById('sec-posts').classList.remove('hidden');
@@ -297,6 +324,7 @@
             if (tabId === 'tab-manage') document.getElementById('sec-manage').classList.remove('hidden');
             if (tabId === 'tab-comments') document.getElementById('sec-comments').classList.remove('hidden');
             if (tabId === 'tab-messages') document.getElementById('sec-messages').classList.remove('hidden');
+            if (tabId === 'tab-banned') document.getElementById('sec-banned').classList.remove('hidden');
         }
 
         let currentPostImages = [];
@@ -409,20 +437,42 @@
             }
         }
 
-        // 🚫 دالة الحظر الشامل لجهاز العميل المخالف
-        async function banUserDevice(deviceId, userName) {
-            if (!deviceId) return alert("تعذر تحديد معرّف هذا الجهاز.");
-            if (confirm(`هل تريد حظر (${userName || 'هذا المستخدم'}) وجهازه نهائياً من دخول الموقع ومراسلتك؟`)) {
+        // 🚫 دالة الحظر المباشرة الشاملة
+        async function banUserDevice(targetId, userName) {
+            const finalId = targetId || userName;
+            if (!finalId) return alert("تعذر تحديد معرّف هذا المستخدم");
+
+            if (confirm(`هل أنت متأكد من حظر (${userName || finalId}) نهائياً من دخول الموقع؟`)) {
                 try {
-                    await db.collection("banned_devices").doc(deviceId).set({
+                    await db.collection("banned_devices").doc(finalId).set({
+                        visitorId: finalId,
+                        userId: finalId,
+                        userName: userName || finalId,
                         bannedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        userName: userName || 'مستخدم مخالف',
                         reason: 'بسبب سوء السلوك ومخالفة الشروط'
                     });
-                    showToast(`تم حظر ${userName || 'المستخدم'} وجهازه نهائياً بنجاح! 🚫`);
+                    showToast(`تم حظر ${userName || finalId} وجهازه بنجاح! 🚫`);
                 } catch (e) {
                     console.error(e);
                     showToast("حدث خطأ أثناء تنفيذ الحظر");
+                }
+            }
+        }
+
+        async function manualBanUser() {
+            const val = document.getElementById('manualBanInput').value.trim();
+            if (!val) return alert("اكتب اسم أو معرّف الشخص لحظره");
+            await banUserDevice(val, val);
+            document.getElementById('manualBanInput').value = '';
+        }
+
+        async function unbanUserDevice(docId) {
+            if (confirm("هل تريد فك الحظر عن هذا المستخدم وإتاحة الموقع له مجدداً؟")) {
+                try {
+                    await db.collection("banned_devices").doc(docId).delete();
+                    showToast("تم فك الحظر بنجاح ✅");
+                } catch (e) {
+                    showToast("حدث خطأ أثناء فك الحظر");
                 }
             }
         }
@@ -450,7 +500,6 @@
 
                 if (totalEl) totalEl.innerText = approvedPosts.length;
 
-                // 1. عرض المنشورات المعلقة
                 if (pendingBadge) {
                     if (pendingPosts.length > 0) {
                         pendingBadge.classList.remove('hidden');
@@ -474,6 +523,8 @@
                                 imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" class="w-full h-20 object-cover rounded-lg border border-slate-700">`).join('')}</div>`;
                             }
 
+                            const devId = data.visitorId || data.deviceId || data.authorName;
+
                             card.innerHTML = `
                                 <div class="flex justify-between items-start">
                                     <div class="flex items-center gap-3">
@@ -486,9 +537,11 @@
                                         </div>
                                     </div>
                                     <div class="flex gap-2">
-                                        ${data.deviceId ? `<button onclick="banUserDevice('${data.deviceId}', '${escapeHtml(data.authorName)}')" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1"><i class="fas fa-ban"></i> حظر نهائي</button>` : ''}
+                                        <button onclick="banUserDevice('${devId}', '${escapeHtml(data.authorName)}')" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+                                            <i class="fas fa-ban"></i> حظر
+                                        </button>
                                         <button onclick="deleteCloudPost('${data.id}')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
-                                            <i class="fas fa-trash"></i> رفض وحذف
+                                            <i class="fas fa-trash"></i> حذف
                                         </button>
                                     </div>
                                 </div>
@@ -517,7 +570,6 @@
                     }
                 }
 
-                // 2. عرض المنشورات المعتمدة
                 if (listEl) {
                     if (approvedPosts.length === 0) {
                         listEl.innerHTML = '<p class="text-center py-8 text-slate-500 text-sm">لا توجد منشورات معتمدة حالياً.</p>';
@@ -547,6 +599,7 @@
 
             listenToPendingComments();
             listenToLiveCustomerMessages();
+            listenToBannedDevices();
         }
 
         async function approvePostWithSolution(postId) {
@@ -612,6 +665,7 @@
 
                     listEl.innerHTML = '';
                     pendingComments.forEach(data => {
+                        const devId = data.visitorId || data.deviceId || data.userName;
                         const card = document.createElement('div');
                         card.className = 'p-4 rounded-2xl border bg-amber-500/5 border-amber-500/30';
                         card.innerHTML = `
@@ -627,7 +681,9 @@
                                     <button onclick="deleteComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white transition">
                                         <i class="fas fa-trash"></i> حذف
                                     </button>
-                                    ${data.deviceId ? `<button onclick="banUserDevice('${data.deviceId}', '${escapeHtml(data.userName)}')" class="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر</button>` : ''}
+                                    <button onclick="banUserDevice('${devId}', '${escapeHtml(data.userName)}')" class="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition">
+                                        <i class="fas fa-ban"></i> حظر
+                                    </button>
                                 </div>
                             </div>
                             <p class="text-xs sm:text-sm text-slate-200 bg-slate-900 p-2.5 rounded-xl mt-2 leading-relaxed">${escapeHtml(data.text)}</p>
@@ -714,13 +770,14 @@
                 });
 
                 allConversations.forEach(data => {
+                    const devId = data.visitorId || data.id;
                     const item = document.createElement('div');
                     item.className = `p-3 rounded-xl cursor-pointer transition flex flex-col gap-1 border ${data.id === activeChatVisitorId ? 'bg-rose-500/10 border-rose-500/40' : 'bg-slate-950/60 border-slate-800/60'}`;
                     item.onclick = () => selectVisitorChat(data.id);
                     item.innerHTML = `
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-xs text-white"><i class="fas fa-user text-rose-500"></i> ${escapeHtml(data.visitorName || 'عميل')}</span>
-                            ${data.deviceId ? `<button onclick="event.stopPropagation(); banUserDevice('${data.deviceId}', '${escapeHtml(data.visitorName)}')" class="text-[10px] text-red-400 hover:text-red-300 font-bold"><i class="fas fa-ban"></i> حظر</button>` : ''}
+                            <button onclick="event.stopPropagation(); banUserDevice('${devId}', '${escapeHtml(data.visitorName)}')" class="text-[10px] bg-red-600/20 px-2 py-0.5 rounded text-red-400 hover:text-white font-bold"><i class="fas fa-ban"></i> حظر</button>
                         </div>
                         <p class="text-xs text-slate-400 truncate">${escapeHtml(data.lastMessage || '')}</p>
                     `;
@@ -746,9 +803,10 @@
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
+            const devId = chat.visitorId || chat.id;
             document.getElementById('activeChatHeader').innerHTML = `
                 <span class="text-xs font-black text-white">محادثة: ${escapeHtml(chat.visitorName || 'زائر')}</span>
-                ${chat.deviceId ? `<button onclick="banUserDevice('${chat.deviceId}', '${escapeHtml(chat.visitorName)}')" class="px-2.5 py-1 bg-red-600/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر هذا الجهاز</button>` : ''}
+                <button onclick="banUserDevice('${devId}', '${escapeHtml(chat.visitorName)}')" class="px-2.5 py-1 bg-red-600/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر هذا المستخدم</button>
             `;
             const body = document.getElementById('activeChatBody');
             body.innerHTML = (chat.messages || []).map(m => `
@@ -778,6 +836,40 @@
 
             input.value = '';
             showToast("تم إرسال الرد بنجاح!");
+        }
+
+        function listenToBannedDevices() {
+            db.collection("banned_devices").onSnapshot((snapshot) => {
+                const list = document.getElementById('bannedUsersList');
+                const countEl = document.getElementById('bannedTotalCount');
+                if (countEl) countEl.innerText = snapshot.size;
+
+                if (!list) return;
+                if (snapshot.empty) {
+                    list.innerHTML = '<p class="text-center py-8 text-slate-500 text-sm">لا يوجد أي مستخدمين محظورين حالياً ✅</p>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'bg-slate-950 border border-red-500/20 rounded-2xl p-4 flex justify-between items-center';
+                    item.innerHTML = `
+                        <div>
+                            <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fas fa-user-slash text-red-500"></i>
+                                <span>${escapeHtml(data.userName || doc.id)}</span>
+                            </h4>
+                            <p class="text-xs text-slate-500 mt-1">المعرّف: <span class="font-mono text-slate-400">${doc.id}</span></p>
+                        </div>
+                        <button onclick="unbanUserDevice('${doc.id}')" class="px-3.5 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl text-xs font-bold transition">
+                            <i class="fas fa-unlock"></i> فك الحظر
+                        </button>
+                    `;
+                    list.appendChild(item);
+                });
+            });
         }
 
         function showToast(msg) {
