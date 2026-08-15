@@ -92,7 +92,7 @@
                 <span id="pendingCommentsBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
             <button onclick="switchTab('tab-messages')" id="btn-tab-messages" class="tab-btn flex-1 min-w-[130px] py-3 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-slate-950 text-slate-400 hover:text-white border border-slate-800/80 relative">
-                <i class="fab fa-facebook-messenger text-sky-400"></i>
+                <i class="fas fa-comments text-sky-400"></i>
                 <span>الرسائل</span>
                 <span id="unreadMessagesBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
@@ -144,7 +144,7 @@
             </div>
         </section>
 
-        <!-- 2. مراجعة مشاكل ومنشورات الزوار والتعليق الحصري عليها -->
+        <!-- 2. مراجعة مشاكل ومنشورات الزوار -->
         <section id="sec-pending-posts" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
                 <div>
@@ -174,12 +174,12 @@
             </div>
         </section>
 
-        <!-- 4. مراجعة التعليقات -->
+        <!-- 4. مراجعة التعليقات المعلقة -->
         <section id="sec-comments" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
                 <h2 class="font-black text-lg text-white flex items-center gap-2 pb-3 border-b border-slate-800">
                     <i class="fas fa-comments text-sky-400"></i>
-                    <span>مراجعة التعليقات الجديدة والرد الرسمي</span>
+                    <span>مراجعة التعليقات المعلقة</span>
                 </h2>
                 <div id="pendingCommentsList" class="space-y-3">
                     <p class="text-center py-10 text-slate-500 text-sm">لا توجد تعليقات جديدة للمراجعة</p>
@@ -187,11 +187,11 @@
             </div>
         </section>
 
-        <!-- 5. رسائل ماسنجر -->
+        <!-- 5. رسائل العملاء -->
         <section id="sec-messages" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
                 <h2 class="font-black text-lg text-white flex items-center gap-2 pb-3 border-b border-slate-800">
-                    <i class="fab fa-facebook-messenger text-blue-400"></i>
+                    <i class="fas fa-comments text-rose-500"></i>
                     <span>صندوق محادثات ورسائل العملاء</span>
                 </h2>
 
@@ -383,7 +383,7 @@
                 await db.collection("posts").add({
                     authorName: 'المهندس محمد السعيد',
                     authorAvatar: 'https://e.top4top.io/p_3878z3lii0.jpg',
-                    deviceType: 'منشور عام معتمد',
+                    deviceType: '',
                     isVisitorPost: false,
                     text: text,
                     images: currentPostImages,
@@ -391,6 +391,7 @@
                     adminSolutionComment: '',
                     reactions: { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 },
                     totalReactions: 0,
+                    userReactionsMap: {},
                     commentsCount: 0,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -408,7 +409,24 @@
             }
         }
 
-        // الاستماع اللحظي وحل مشكلة جلب المنشورات
+        // 🚫 دالة الحظر الشامل لجهاز العميل المخالف
+        async function banUserDevice(deviceId, userName) {
+            if (!deviceId) return alert("تعذر تحديد معرّف هذا الجهاز.");
+            if (confirm(`هل تريد حظر (${userName || 'هذا المستخدم'}) وجهازه نهائياً من دخول الموقع ومراسلتك؟`)) {
+                try {
+                    await db.collection("banned_devices").doc(deviceId).set({
+                        bannedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        userName: userName || 'مستخدم مخالف',
+                        reason: 'بسبب سوء السلوك ومخالفة الشروط'
+                    });
+                    showToast(`تم حظر ${userName || 'المستخدم'} وجهازه نهائياً بنجاح! 🚫`);
+                } catch (e) {
+                    console.error(e);
+                    showToast("حدث خطأ أثناء تنفيذ الحظر");
+                }
+            }
+        }
+
         function initRealtimeListeners() {
             db.collection("posts").onSnapshot((snapshot) => {
                 const totalEl = document.getElementById('postsTotalCount');
@@ -421,7 +439,6 @@
                     allPosts.push({ id: doc.id, ...doc.data() });
                 });
 
-                // فرز المنشورات برمجياً من الأحدث للأقدم
                 allPosts.sort((a, b) => {
                     const timeA = (a.createdAt && a.createdAt.toDate) ? a.createdAt.toDate().getTime() : 0;
                     const timeB = (b.createdAt && b.createdAt.toDate) ? b.createdAt.toDate().getTime() : 0;
@@ -468,9 +485,12 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <button onclick="deleteCloudPost('${data.id}')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
-                                        <i class="fas fa-trash"></i> رفض وحذف
-                                    </button>
+                                    <div class="flex gap-2">
+                                        ${data.deviceId ? `<button onclick="banUserDevice('${data.deviceId}', '${escapeHtml(data.authorName)}')" class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1"><i class="fas fa-ban"></i> حظر نهائي</button>` : ''}
+                                        <button onclick="deleteCloudPost('${data.id}')" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1">
+                                            <i class="fas fa-trash"></i> رفض وحذف
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
@@ -510,7 +530,7 @@
                                 <div class="space-y-1 flex-1">
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs font-bold text-rose-400">${escapeHtml(data.authorName || 'الأدمن')}</span>
-                                        <span class="text-[10px] text-slate-400">• جهاز: ${escapeHtml(data.deviceType || 'عام')}</span>
+                                        ${data.deviceType ? `<span class="text-[10px] text-slate-400">• جهاز: ${escapeHtml(data.deviceType)}</span>` : ''}
                                     </div>
                                     <p class="text-sm text-slate-200 line-clamp-1">${escapeHtml(data.text || '')}</p>
                                     ${data.adminSolutionComment ? `<p class="text-xs text-emerald-400 line-clamp-1">✅ ردك: ${escapeHtml(data.adminSolutionComment)}</p>` : ''}
@@ -523,9 +543,6 @@
                         });
                     }
                 }
-            }, (err) => {
-                console.error("Firestore Listen Error:", err);
-                showToast("تعذر جلب البيانات من السحابة");
             });
 
             listenToPendingComments();
@@ -561,87 +578,112 @@
         }
 
         function listenToPendingComments() {
-            db.collection("comments_pending").onSnapshot((snapshot) => {
-                const listEl = document.getElementById('pendingCommentsList');
-                const badge = document.getElementById('pendingCommentsBadge');
-                
-                let allComments = [];
-                snapshot.forEach(doc => {
-                    allComments.push({ id: doc.id, ...doc.data() });
-                });
+            db.collection("comments_pending")
+                .where("status", "==", "pending")
+                .onSnapshot((snapshot) => {
+                    const listEl = document.getElementById('pendingCommentsList');
+                    const badge = document.getElementById('pendingCommentsBadge');
+                    
+                    let pendingComments = [];
+                    snapshot.forEach(doc => {
+                        pendingComments.push({ id: doc.id, ...doc.data() });
+                    });
 
-                allComments.sort((a, b) => {
-                    const timeA = (a.createdAt && a.createdAt.toDate) ? a.createdAt.toDate().getTime() : 0;
-                    const timeB = (b.createdAt && b.createdAt.toDate) ? b.createdAt.toDate().getTime() : 0;
-                    return timeB - timeA;
-                });
+                    pendingComments.sort((a, b) => {
+                        const timeA = (a.createdAt && a.createdAt.toDate) ? a.createdAt.toDate().getTime() : 0;
+                        const timeB = (b.createdAt && b.createdAt.toDate) ? b.createdAt.toDate().getTime() : 0;
+                        return timeB - timeA;
+                    });
 
-                const pendingCount = allComments.filter(c => c.status === 'pending').length;
-
-                if (badge) {
-                    if (pendingCount > 0) {
-                        badge.classList.remove('hidden');
-                        badge.innerText = pendingCount;
-                    } else {
-                        badge.classList.add('hidden');
+                    if (badge) {
+                        if (pendingComments.length > 0) {
+                            badge.classList.remove('hidden');
+                            badge.innerText = pendingComments.length;
+                        } else {
+                            badge.classList.add('hidden');
+                        }
                     }
-                }
 
-                if (!listEl) return;
-                if (allComments.length === 0) {
-                    listEl.innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">لا توجد تعليقات</p>';
-                    return;
-                }
+                    if (!listEl) return;
+                    if (pendingComments.length === 0) {
+                        listEl.innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">لا توجد أي تعليقات جديدة معلقة للمراجعة ✅</p>';
+                        return;
+                    }
 
-                listEl.innerHTML = '';
-                allComments.forEach(data => {
-                    const card = document.createElement('div');
-                    const isPending = (data.status === 'pending');
-                    card.className = `p-4 rounded-2xl border ${isPending ? 'bg-amber-500/5 border-amber-500/30' : 'bg-slate-950/60 border-slate-800'}`;
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="text-sm font-black text-white">${escapeHtml(data.userName)}</h4>
-                                <span class="text-[10px] ${isPending ? 'text-amber-400' : 'text-emerald-400'} font-bold">${isPending ? '⏳ بانتظار موافقتك' : '✅ معتمد'}</span>
+                    listEl.innerHTML = '';
+                    pendingComments.forEach(data => {
+                        const card = document.createElement('div');
+                        card.className = 'p-4 rounded-2xl border bg-amber-500/5 border-amber-500/30';
+                        card.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="text-sm font-black text-white">${escapeHtml(data.userName)}</h4>
+                                    <span class="text-[10px] text-amber-400 font-bold">⏳ بانتظار موافقتك</span>
+                                </div>
+                                <div class="flex gap-1.5">
+                                    <button onclick="approveComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 transition">
+                                        <i class="fas fa-check"></i> موافقة
+                                    </button>
+                                    <button onclick="deleteComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-600 hover:text-white transition">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                    ${data.deviceId ? `<button onclick="banUserDevice('${data.deviceId}', '${escapeHtml(data.userName)}')" class="px-3 py-1.5 bg-red-600/20 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر</button>` : ''}
+                                </div>
                             </div>
-                            <div class="flex gap-1.5">
-                                ${isPending ? `<button onclick="approveComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold"><i class="fas fa-check"></i> موافقة</button>` : ''}
-                                <button onclick="deleteComment('${data.id}', '${data.postId}', '${data.status}')" class="px-3 py-1.5 bg-rose-600/20 text-rose-300 rounded-xl text-xs font-bold"><i class="fas fa-trash"></i> حذف</button>
+                            <p class="text-xs sm:text-sm text-slate-200 bg-slate-900 p-2.5 rounded-xl mt-2 leading-relaxed">${escapeHtml(data.text)}</p>
+                            <div class="pt-2 flex gap-2">
+                                <input type="text" id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (اختياري)..." value="${escapeHtml(data.replyText || '')}"
+                                    class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
+                                <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId}')" class="bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-rose-500 transition">
+                                    حفظ الرد ونشر
+                                </button>
                             </div>
-                        </div>
-                        <p class="text-xs sm:text-sm text-slate-200 bg-slate-900 p-2.5 rounded-xl mt-2">${escapeHtml(data.text)}</p>
-                        <div class="pt-2 flex gap-2">
-                            <input type="text" id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي..." value="${escapeHtml(data.replyText || '')}"
-                                class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white">
-                            <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId}')" class="bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">حفظ الرد</button>
-                        </div>
-                    `;
-                    listEl.appendChild(card);
+                        `;
+                        listEl.appendChild(card);
+                    });
                 });
-            });
         }
 
         async function approveComment(commentId, postId) {
             try {
-                await db.collection("comments_pending").doc(commentId).update({ status: 'approved' });
-                await db.collection("posts").doc(postId).update({ commentsCount: firebase.firestore.FieldValue.increment(1) });
-                showToast("تم اعتماد التعليق ونشره فوراً! ✅");
-            } catch (err) { showToast("حدث خطأ"); }
+                await db.collection("comments_pending").doc(commentId).update({
+                    status: 'approved',
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await db.collection("posts").doc(postId).update({
+                    commentsCount: firebase.firestore.FieldValue.increment(1)
+                });
+                showToast("تمت الموافقة على التعليق ونشره على الموقع بنجاح! ✅");
+            } catch (err) {
+                showToast("حدث خطأ أثناء الموافقة");
+            }
         }
 
         async function saveAdminReplyToComment(commentId, postId) {
             const text = document.getElementById(`adminReplyInput_${commentId}`).value.trim();
-            await db.collection("comments_pending").doc(commentId).update({ replyText: text, status: 'approved' });
-            showToast("تم حفظ ردك الرسمي بنجاح!");
+            try {
+                await db.collection("comments_pending").doc(commentId).update({
+                    replyText: text,
+                    status: 'approved',
+                    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await db.collection("posts").doc(postId).update({
+                    commentsCount: firebase.firestore.FieldValue.increment(1)
+                });
+                showToast("تم حفظ ردك الرسمي ونشر التعليق على الموقع! ✅");
+            } catch (err) {
+                showToast("حدث خطأ أثناء الحفظ");
+            }
         }
 
-        async function deleteComment(commentId, postId, currentStatus) {
-            if (confirm("حذف التعليق نهائياً؟")) {
-                await db.collection("comments_pending").doc(commentId).delete();
-                if (currentStatus === 'approved') {
-                    await db.collection("posts").doc(postId).update({ commentsCount: firebase.firestore.FieldValue.increment(-1) });
+        async function deleteComment(commentId, postId) {
+            if (confirm("هل تريد رفض وحذف هذا التعليق نهائياً؟")) {
+                try {
+                    await db.collection("comments_pending").doc(commentId).delete();
+                    showToast("تم حذف التعليق");
+                } catch (err) {
+                    showToast("تعذر حذف التعليق");
                 }
-                showToast("تم حذف التعليق");
             }
         }
 
@@ -678,6 +720,7 @@
                     item.innerHTML = `
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-xs text-white"><i class="fas fa-user text-rose-500"></i> ${escapeHtml(data.visitorName || 'عميل')}</span>
+                            ${data.deviceId ? `<button onclick="event.stopPropagation(); banUserDevice('${data.deviceId}', '${escapeHtml(data.visitorName)}')" class="text-[10px] text-red-400 hover:text-red-300 font-bold"><i class="fas fa-ban"></i> حظر</button>` : ''}
                         </div>
                         <p class="text-xs text-slate-400 truncate">${escapeHtml(data.lastMessage || '')}</p>
                     `;
@@ -703,7 +746,10 @@
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
-            document.getElementById('activeChatHeader').innerHTML = `<span class="text-xs font-black text-white">محادثة: ${escapeHtml(chat.visitorName || 'زائر')}</span>`;
+            document.getElementById('activeChatHeader').innerHTML = `
+                <span class="text-xs font-black text-white">محادثة: ${escapeHtml(chat.visitorName || 'زائر')}</span>
+                ${chat.deviceId ? `<button onclick="banUserDevice('${chat.deviceId}', '${escapeHtml(chat.visitorName)}')" class="px-2.5 py-1 bg-red-600/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر هذا الجهاز</button>` : ''}
+            `;
             const body = document.getElementById('activeChatBody');
             body.innerHTML = (chat.messages || []).map(m => `
                 <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
