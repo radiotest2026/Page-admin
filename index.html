@@ -211,13 +211,31 @@
                             <div class="text-center text-xs text-slate-600 py-20">اختر أحد العملاء لبدء المراسلة</div>
                         </div>
 
-                        <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2" id="replyFormContainer" style="display: none;">
-                            <input type="text" id="adminReplyTextInput" placeholder="اكتب ردك هنا..." onkeypress="if(event.key==='Enter') sendAdminReply()"
-                                class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
-                            <button onclick="sendAdminReply()" class="bg-gradient-to-r from-rose-600 to-purple-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5">
-                                <i class="fas fa-paper-plane text-xs"></i>
-                                <span>إرسال</span>
-                            </button>
+                        <div class="p-3 bg-slate-900 border-t border-slate-800 flex flex-col gap-2" id="replyFormContainer" style="display: none;">
+                            <!-- معاينة وسائط الشات قبل الإرسال -->
+                            <div id="chatMediaPreview" class="hidden"></div>
+                            
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="document.getElementById('chatFileInput').click()" title="إرفاق صورة / صوت / فيديو"
+                                    class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-700 hover:border-rose-500 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <input type="file" id="chatFileInput" class="hidden" accept="audio/*,image/*,video/*" onchange="handleChatMediaFile(event)">
+
+                                <button type="button" id="chatRecBtn" onclick="toggleChatAudioRecording()" title="تسجيل صوتي"
+                                    class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-700 hover:border-rose-500 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <span id="chatRecTimer" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse">00:00</span>
+
+                                <input type="text" id="adminReplyTextInput" placeholder="اكتب ردك هنا..." onkeypress="if(event.key==='Enter') sendAdminReply()"
+                                    class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
+                                
+                                <button onclick="sendAdminReply()" class="bg-gradient-to-r from-rose-600 to-purple-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition flex items-center gap-1.5 shrink-0 shadow-lg shadow-rose-600/20">
+                                    <i class="fas fa-paper-plane text-xs"></i>
+                                    <span>إرسال</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -479,7 +497,7 @@
         }
 
         // ==========================================
-        // 🎙️ إدارة الوسائط المتعددة لحل الأدمن (صوت، صورة، فيديو، تسجيل)
+        // 🎙️ إدارة الوسائط المتعددة لحل الأدمن في المشاكل (صوت، صورة، فيديو، تسجيل)
         // ==========================================
         let adminMediaMap = {};
         let mediaRecorders = {};
@@ -603,6 +621,141 @@
                     timerEl.classList.remove('hidden');
                     timerEl.innerText = '00:00';
                     recordIntervals[postId] = setInterval(() => {
+                        seconds++;
+                        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                        const secs = String(seconds % 60).padStart(2, '0');
+                        timerEl.innerText = `${mins}:${secs}`;
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("يرجى إعطاء صلاحية الميكروفون للبدء في التسجيل الصوتي");
+            }
+        }
+
+        // ==========================================
+        // 💬 إدارة الوسائط المتعددة في محادثات العملاء (شات)
+        // ==========================================
+        let currentChatMedia = null;
+        let chatMediaRecorder = null;
+        let chatAudioChunks = [];
+        let chatRecordInterval = null;
+
+        async function handleChatMediaFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 25 * 1024 * 1024) {
+                alert("حجم الملف كبير جداً، الحد الأقصى المسموح 25 ميجابايت");
+                event.target.value = '';
+                return;
+            }
+
+            let type = 'file';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+            else if (file.type.startsWith('video/')) type = 'video';
+
+            if (type === 'image') {
+                const base64 = await compressImage(file);
+                setChatMedia({ type: 'image', url: base64, name: file.name });
+            } else {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setChatMedia({ type: type, url: e.target.result, name: file.name });
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = '';
+        }
+
+        function setChatMedia(mediaObj) {
+            currentChatMedia = mediaObj;
+            renderChatMediaPreview();
+        }
+
+        function clearChatMedia() {
+            currentChatMedia = null;
+            renderChatMediaPreview();
+        }
+
+        function renderChatMediaPreview() {
+            const container = document.getElementById('chatMediaPreview');
+            if (!container) return;
+
+            if (!currentChatMedia) {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            let content = '';
+            if (currentChatMedia.type === 'image') {
+                content = `<img src="${currentChatMedia.url}" class="h-20 rounded-xl border border-slate-700 object-cover">`;
+            } else if (currentChatMedia.type === 'audio') {
+                content = `
+                    <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                        <i class="fas fa-volume-high text-rose-500"></i>
+                        <audio controls class="h-8 max-w-[200px]"><source src="${currentChatMedia.url}" type="audio/mpeg"></audio>
+                    </div>`;
+            } else if (currentChatMedia.type === 'video') {
+                content = `<video controls class="h-24 rounded-xl border border-slate-700 max-w-[200px]"><source src="${currentChatMedia.url}"></video>`;
+            }
+
+            container.innerHTML = `
+                <div class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-rose-500/40 w-fit">
+                    ${content}
+                    <button type="button" onclick="clearChatMedia()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white w-6 h-6 rounded-lg flex items-center justify-center transition text-xs">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        async function toggleChatAudioRecording() {
+            const recBtn = document.getElementById('chatRecBtn');
+            const timerEl = document.getElementById('chatRecTimer');
+
+            if (chatMediaRecorder && chatMediaRecorder.state === 'recording') {
+                chatMediaRecorder.stop();
+                recBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                recBtn.classList.remove('bg-red-600', 'text-white', 'animate-pulse');
+                recBtn.classList.add('text-slate-400');
+                clearInterval(chatRecordInterval);
+                if (timerEl) timerEl.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chatMediaRecorder = new MediaRecorder(stream);
+                chatAudioChunks = [];
+
+                chatMediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chatAudioChunks.push(e.data);
+                };
+
+                chatMediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(chatAudioChunks, { type: 'audio/mp3' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setChatMedia({ type: 'audio', url: e.target.result, name: 'تسجيل صوتي مباشر.mp3' });
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                chatMediaRecorder.start();
+                recBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                recBtn.classList.remove('text-slate-400');
+                recBtn.classList.add('bg-red-600', 'text-white', 'animate-pulse');
+
+                let seconds = 0;
+                if (timerEl) {
+                    timerEl.classList.remove('hidden');
+                    timerEl.innerText = '00:00';
+                    chatRecordInterval = setInterval(() => {
                         seconds++;
                         const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
                         const secs = String(seconds % 60).padStart(2, '0');
@@ -958,15 +1111,35 @@
 
                 allConversations.forEach(data => {
                     const devId = data.visitorId || data.id;
+                    const isUnread = data.isReadByAdmin === false;
                     const item = document.createElement('div');
-                    item.className = `p-3 rounded-xl cursor-pointer transition flex flex-col gap-1 border ${data.id === activeChatVisitorId ? 'bg-rose-500/10 border-rose-500/40' : 'bg-slate-950/60 border-slate-800/60'}`;
+                    
+                    // تمييز المحادثات المقروءة والغير مقروءة بالألوان والحدود
+                    let containerClasses = 'p-3 rounded-xl cursor-pointer transition flex flex-col gap-1 border relative ';
+                    if (data.id === activeChatVisitorId) {
+                        containerClasses += 'bg-rose-500/10 border-rose-500/50 shadow-md shadow-rose-500/10';
+                    } else if (isUnread) {
+                        containerClasses += 'bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10';
+                    } else {
+                        containerClasses += 'bg-slate-950/60 border-slate-800/60 opacity-80 hover:opacity-100';
+                    }
+                    item.className = containerClasses;
+
                     item.onclick = () => selectVisitorChat(data.id);
                     item.innerHTML = `
                         <div class="flex justify-between items-center">
-                            <span class="font-bold text-xs text-white"><i class="fas fa-user text-rose-500"></i> ${escapeHtml(data.visitorName || 'عميل')}</span>
-                            <button onclick="event.stopPropagation(); banUserDevice('${devId}', '${escapeHtml(data.visitorName)}')" class="text-[10px] bg-red-600/20 px-2 py-0.5 rounded text-red-400 hover:text-white font-bold"><i class="fas fa-ban"></i> حظر</button>
+                            <div class="flex items-center gap-1.5">
+                                ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"></span>' : ''}
+                                <span class="font-bold text-xs ${isUnread ? 'text-emerald-300 font-black' : 'text-white'}">
+                                    <i class="fas fa-user ${isUnread ? 'text-emerald-400' : 'text-rose-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                ${isUnread ? '<span class="text-[9px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full">جديدة</span>' : ''}
+                                <button onclick="event.stopPropagation(); banUserDevice('${devId}', '${escapeHtml(data.visitorName)}')" class="text-[10px] bg-red-600/20 px-2 py-0.5 rounded text-red-400 hover:text-white font-bold"><i class="fas fa-ban"></i> حظر</button>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-400 truncate">${escapeHtml(data.lastMessage || '')}</p>
+                        <p class="text-xs ${isUnread ? 'text-emerald-100 font-semibold' : 'text-slate-400'} truncate">${escapeHtml(data.lastMessage || '')}</p>
                     `;
                     usersList.appendChild(item);
                 });
@@ -996,14 +1169,32 @@
                 <button onclick="banUserDevice('${devId}', '${escapeHtml(chat.visitorName)}')" class="px-2.5 py-1 bg-red-600/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-600 hover:text-white transition"><i class="fas fa-ban"></i> حظر هذا المستخدم</button>
             `;
             const body = document.getElementById('activeChatBody');
-            body.innerHTML = (chat.messages || []).map(m => `
-                <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
-                    <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-200'} text-xs px-3.5 py-2 rounded-2xl max-w-[80%]">
-                        <div class="font-bold text-[9px] opacity-75">${escapeHtml(m.senderName)}</div>
-                        <div>${escapeHtml(m.text)}</div>
+            body.innerHTML = (chat.messages || []).map(m => {
+                let mediaHtml = '';
+                if (m.media) {
+                    if (m.media.type === 'image') {
+                        mediaHtml = `<img src="${m.media.url}" class="rounded-xl mt-1.5 max-h-48 border border-white/10 object-cover">`;
+                    } else if (m.media.type === 'audio') {
+                        mediaHtml = `
+                            <div class="mt-1.5 p-1.5 bg-black/20 rounded-xl flex items-center gap-2">
+                                <i class="fas fa-volume-high text-xs"></i>
+                                <audio controls class="h-7 max-w-[220px]"><source src="${m.media.url}" type="audio/mpeg"></audio>
+                            </div>`;
+                    } else if (m.media.type === 'video') {
+                        mediaHtml = `<video controls class="rounded-xl mt-1.5 max-h-48 border border-white/10 max-w-full"><source src="${m.media.url}"></video>`;
+                    }
+                }
+
+                return `
+                    <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
+                        <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-200'} text-xs px-3.5 py-2 rounded-2xl max-w-[80%] space-y-1">
+                            <div class="font-bold text-[9px] opacity-75">${escapeHtml(m.senderName)}</div>
+                            ${m.text ? `<div>${escapeHtml(m.text)}</div>` : ''}
+                            ${mediaHtml}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
             body.scrollTop = body.scrollHeight;
         }
 
@@ -1011,18 +1202,40 @@
             if (!activeChatVisitorId) return;
             const input = document.getElementById('adminReplyTextInput');
             const text = input.value.trim();
-            if (!text) return;
+            const media = currentChatMedia;
 
-            const replyData = { sender: 'admin', senderName: 'المهندس محمد السعيد', text: text, time: new Date().toISOString() };
-            await db.collection("messages").doc(activeChatVisitorId).set({
-                lastMessage: `[ردك]: ${text}`,
-                isReadByAdmin: true,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                messages: firebase.firestore.FieldValue.arrayUnion(replyData)
-            }, { merge: true });
+            if (!text && !media) return;
 
-            input.value = '';
-            showToast("تم إرسال الرد بنجاح!");
+            let summaryText = text;
+            if (!summaryText && media) {
+                if (media.type === 'audio') summaryText = '🎤 [مقطع صوتي]';
+                else if (media.type === 'image') summaryText = '🖼️ [صورة]';
+                else if (media.type === 'video') summaryText = '🎥 [مقطع فيديو]';
+            }
+
+            const replyData = {
+                sender: 'admin',
+                senderName: 'المهندس محمد السعيد',
+                text: text,
+                media: media || null,
+                time: new Date().toISOString()
+            };
+
+            try {
+                await db.collection("messages").doc(activeChatVisitorId).set({
+                    lastMessage: `[ردك]: ${summaryText}`,
+                    isReadByAdmin: true,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    messages: firebase.firestore.FieldValue.arrayUnion(replyData)
+                }, { merge: true });
+
+                input.value = '';
+                clearChatMedia();
+                showToast("تم إرسال الرد بنجاح!");
+            } catch (err) {
+                console.error(err);
+                showToast("تعذر إرسال الرد");
+            }
         }
 
         function listenToBannedDevices() {
