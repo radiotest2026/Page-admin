@@ -23,6 +23,16 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
 
+    <!-- نافذة تكبير وعرض الصور ملء الشاشة -->
+    <div id="imageModal" onclick="closeImagePreview()" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[1001] hidden flex items-center justify-center p-4 cursor-pointer transition-all duration-300">
+        <div class="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onclick="event.stopPropagation()">
+            <img id="modalPreviewImg" src="" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-rose-500/40">
+            <button onclick="closeImagePreview()" class="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 bg-rose-600 hover:bg-rose-500 text-white w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-lg transition">
+                <i class="fas fa-times text-sm sm:text-base"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- شاشة القفل 108 -->
     <div id="authScreen" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[999] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-rose-500/30 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl shadow-rose-500/10 space-y-5">
@@ -189,11 +199,10 @@
             </div>
         </section>
 
-        <!-- 5. رسائل العملاء (نظام شات ماسنجر الاحترافي) -->
+        <!-- 5. رسائل العملاء (شات كامل مثل ماسنجر) -->
         <section id="sec-messages" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-3 sm:p-6 shadow-2xl space-y-4">
                 
-                <!-- شريط عنوان صندوق الرسائل -->
                 <div class="flex justify-between items-center pb-2 border-b border-slate-800">
                     <h2 class="font-black text-base sm:text-lg text-white flex items-center gap-2">
                         <i class="fas fa-comments text-rose-500"></i>
@@ -218,7 +227,7 @@
                     <!-- 2. شاشة المحادثة الفردية الكاملة -->
                     <div id="singleChatView" class="h-full flex flex-col justify-between hidden bg-slate-950">
                         
-                        <!-- الهيدر مع زر الرجوع -->
+                        <!-- الهيدر -->
                         <div class="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center shrink-0">
                             <div class="flex items-center gap-3">
                                 <button onclick="backToConversationsList()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700 shadow-sm">
@@ -231,7 +240,7 @@
                         </div>
 
                         <!-- صندوق الرسائل -->
-                        <div class="flex-1 p-3 sm:p-5 overflow-y-auto space-y-3" id="activeChatBody">
+                        <div class="flex-1 min-h-0 p-3 sm:p-5 overflow-y-auto space-y-3" id="activeChatBody">
                             <div class="text-center text-xs text-slate-600 py-16">جاري تحميل الرسائل...</div>
                         </div>
 
@@ -314,6 +323,21 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+
+        function openImagePreview(url) {
+            if (!url) return;
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalPreviewImg');
+            if (modal && modalImg) {
+                modalImg.src = url;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeImagePreview() {
+            const modal = document.getElementById('imageModal');
+            if (modal) modal.classList.add('hidden');
+        }
 
         function checkPin() {
             const input = document.getElementById('pinInput').value.trim();
@@ -435,7 +459,7 @@
             container.classList.remove('hidden');
             container.innerHTML = currentPostImages.map((src, idx) => `
                 <div class="relative group rounded-xl overflow-hidden border border-slate-700 aspect-square">
-                    <img src="${src}" class="w-full h-full object-cover">
+                    <img src="${src}" onclick="openImagePreview('${src}')" class="w-full h-full object-cover cursor-pointer hover:scale-105 transition">
                     <button type="button" onclick="removeSelectedImage(${idx})" class="absolute top-1 right-1 bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md hover:bg-rose-700 transition">
                         <i class="fas fa-times"></i>
                     </button>
@@ -485,7 +509,6 @@
             }
         }
 
-        // 🚫 دالة الحظر المباشرة الشاملة
         async function banUserDevice(targetId, userName) {
             const finalId = targetId || userName;
             if (!finalId) return alert("تعذر تحديد معرّف هذا المستخدم");
@@ -526,7 +549,7 @@
         }
 
         // ==========================================
-        // 🎙️ إدارة الوسائط المتعددة لحل الأدمن في المشاكل
+        // 🎙️ إدارة وسائط حلول الأدمن في المشاكل
         // ==========================================
         let adminMediaMap = {};
         let mediaRecorders = {};
@@ -585,7 +608,7 @@
             container.classList.remove('hidden');
             let content = '';
             if (media.type === 'image') {
-                content = `<img src="${media.url}" class="h-28 rounded-xl border border-slate-700 object-cover">`;
+                content = `<img src="${media.url}" onclick="openImagePreview('${media.url}')" class="h-28 rounded-xl border border-slate-700 object-cover cursor-pointer hover:opacity-90">`;
             } else if (media.type === 'audio') {
                 content = `
                     <div class="flex items-center gap-3 bg-slate-900 p-2.5 rounded-xl border border-slate-800 w-full max-w-md">
@@ -663,7 +686,7 @@
         }
 
         // ==========================================
-        // 💬 إدارة الوسائط في محادثات العملاء (شات)
+        // 💬 إدارة وسائط المحادثات (شات)
         // ==========================================
         let currentChatMedia = null;
         let chatMediaRecorder = null;
@@ -721,7 +744,7 @@
             container.classList.remove('hidden');
             let content = '';
             if (currentChatMedia.type === 'image') {
-                content = `<img src="${currentChatMedia.url}" class="h-16 rounded-xl border border-slate-700 object-cover">`;
+                content = `<img src="${currentChatMedia.url}" onclick="openImagePreview('${currentChatMedia.url}')" class="h-16 rounded-xl border border-slate-700 object-cover cursor-pointer hover:opacity-90">`;
             } else if (currentChatMedia.type === 'audio') {
                 content = `
                     <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
@@ -840,7 +863,7 @@
                             
                             let imagesHtml = '';
                             if (data.images && data.images.length > 0) {
-                                imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" class="w-full h-20 object-cover rounded-lg border border-slate-700">`).join('')}</div>`;
+                                imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" onclick="openImagePreview('${src}')" class="w-full h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-90">`).join('')}</div>`;
                             }
 
                             const devId = data.visitorId || data.deviceId || data.authorName;
@@ -1111,7 +1134,7 @@
         }
 
         // ==========================================
-        // 💬 نظام الرسائل والشات
+        // 💬 نظام الرسائل والشات المحدث (عرض الصور مضمون 100%)
         // ==========================================
         let activeChatVisitorId = null;
         let allConversations = [];
@@ -1205,6 +1228,7 @@
             clearChatMedia();
         }
 
+        // دالة عرض رسائل الشات مع الكشف الشامل والتلقائي للصور والمرفقات
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
@@ -1224,31 +1248,97 @@
             const body = document.getElementById('activeChatBody');
             body.innerHTML = (chat.messages || []).map(m => {
                 let mediaHtml = '';
+                let detectedImages = [];
+                let detectedAudios = [];
+                let detectedVideos = [];
+                let rawText = m.text || '';
+
+                // فحص كائن media
                 if (m.media) {
-                    if (m.media.type === 'image') {
-                        mediaHtml = `<img src="${m.media.url}" class="rounded-xl mt-1.5 max-h-56 border border-white/10 object-cover">`;
-                    } else if (m.media.type === 'audio') {
-                        mediaHtml = `
-                            <div class="mt-1.5 p-2 bg-black/30 rounded-xl flex items-center gap-2">
-                                <i class="fas fa-volume-high text-xs"></i>
-                                <audio controls class="h-7 max-w-[220px]"><source src="${m.media.url}" type="audio/mpeg"></audio>
-                            </div>`;
-                    } else if (m.media.type === 'video') {
-                        mediaHtml = `<video controls class="rounded-xl mt-1.5 max-h-56 border border-white/10 max-w-full"><source src="${m.media.url}"></video>`;
+                    if (typeof m.media === 'object' && m.media.url) {
+                        if (m.media.type === 'image') detectedImages.push(m.media.url);
+                        else if (m.media.type === 'audio') detectedAudios.push(m.media.url);
+                        else if (m.media.type === 'video') detectedVideos.push(m.media.url);
+                    } else if (typeof m.media === 'string') {
+                        if (isImageSource(m.media)) detectedImages.push(m.media);
+                        else if (isAudioSource(m.media)) detectedAudios.push(m.media);
+                        else if (isVideoSource(m.media)) detectedVideos.push(m.media);
                     }
+                }
+
+                // فحص الحقول الفردية
+                const directImg = m.imageUrl || m.image || m.img || m.photo || m.file;
+                if (directImg && isImageSource(directImg)) detectedImages.push(directImg);
+
+                const directAudio = m.audioUrl || m.audio;
+                if (directAudio) detectedAudios.push(directAudio);
+
+                const directVideo = m.videoUrl || m.video;
+                if (directVideo) detectedVideos.push(directVideo);
+
+                // فحص إذا كان نص الرسالة عبارة عن صورة مباشرة
+                if (typeof rawText === 'string' && isImageSource(rawText.trim())) {
+                    detectedImages.push(rawText.trim());
+                    rawText = ''; // مسح النص ليظهر فقط كصورة
+                }
+
+                // بناء صور المرفقات
+                if (detectedImages.length > 0) {
+                    detectedImages.forEach(imgSrc => {
+                        mediaHtml += `
+                            <div class="mt-2 rounded-xl overflow-hidden border border-white/20 bg-black/40 inline-block max-w-full">
+                                <img src="${imgSrc}" onclick="openImagePreview('${imgSrc}')" 
+                                    class="max-h-60 rounded-xl object-contain cursor-pointer hover:scale-[1.02] transition block"
+                                    onerror="this.parentElement.style.display='none'">
+                            </div>`;
+                    });
+                }
+
+                // بناء الصوت
+                if (detectedAudios.length > 0) {
+                    detectedAudios.forEach(audSrc => {
+                        mediaHtml += `
+                            <div class="mt-2 p-2 bg-black/40 rounded-xl flex items-center gap-2 border border-white/10">
+                                <i class="fas fa-volume-high text-xs text-rose-400"></i>
+                                <audio controls class="h-8 max-w-[220px]"><source src="${audSrc}" type="audio/mpeg"></audio>
+                            </div>`;
+                    });
+                }
+
+                // بناء الفيديو
+                if (detectedVideos.length > 0) {
+                    detectedVideos.forEach(vidSrc => {
+                        mediaHtml += `<video controls class="rounded-xl mt-2 max-h-56 border border-white/10 max-w-full"><source src="${vidSrc}"></video>`;
+                    });
                 }
 
                 return `
                     <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
                         <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/10' : 'bg-slate-800 text-slate-200 border border-slate-700'} text-xs sm:text-sm px-4 py-2.5 rounded-2xl max-w-[85%] space-y-1">
-                            <div class="font-bold text-[10px] opacity-75">${escapeHtml(m.senderName)}</div>
-                            ${m.text ? `<div class="leading-relaxed break-words">${formatMessageText(m.text)}</div>` : ''}
+                            <div class="font-bold text-[10px] opacity-75">${escapeHtml(m.senderName || 'عميل')}</div>
+                            ${rawText ? `<div class="leading-relaxed break-words">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
                     </div>
                 `;
             }).join('');
             body.scrollTop = body.scrollHeight;
+        }
+
+        // دوال مساعدة للتعرف على نوع الروابط والملفات
+        function isImageSource(str) {
+            if (!str || typeof str !== 'string') return false;
+            return str.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i.test(str);
+        }
+
+        function isAudioSource(str) {
+            if (!str || typeof str !== 'string') return false;
+            return str.startsWith('data:audio') || /\.(mp3|wav|ogg|m4a|aac)(\?.*)?$/i.test(str);
+        }
+
+        function isVideoSource(str) {
+            if (!str || typeof str !== 'string') return false;
+            return str.startsWith('data:video') || /\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(str);
         }
 
         async function sendAdminReply() {
@@ -1341,7 +1431,6 @@
             return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        // دالة تحويل الروابط إلى روابط قابلة للضغط
         function formatMessageText(text) {
             if (!text) return '';
             const safeText = escapeHtml(text);
