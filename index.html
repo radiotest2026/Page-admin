@@ -861,9 +861,10 @@
                             const card = document.createElement('div');
                             card.className = 'bg-slate-950 border border-amber-500/30 rounded-2xl p-5 space-y-4';
                             
+                            // تفعيل إمكانية تكبير الصور المعلقة بمجرد الضغط عليها
                             let imagesHtml = '';
                             if (data.images && data.images.length > 0) {
-                                imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" onclick="openImagePreview('${src}')" class="w-full h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-90">`).join('')}</div>`;
+                                imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" onclick="openImagePreview('${src}')" class="w-full h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-90 hover:scale-105 transition">`).join('')}</div>`;
                             }
 
                             const devId = data.visitorId || data.deviceId || data.authorName;
@@ -1134,7 +1135,7 @@
         }
 
         // ==========================================
-        // 💬 نظام الرسائل والشات المحدث (عرض الصور مضمون 100%)
+        // 💬 نظام الرسائل والشات
         // ==========================================
         let activeChatVisitorId = null;
         let allConversations = [];
@@ -1228,7 +1229,6 @@
             clearChatMedia();
         }
 
-        // دالة عرض رسائل الشات مع الكشف الشامل والتلقائي للصور والمرفقات
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
@@ -1253,7 +1253,6 @@
                 let detectedVideos = [];
                 let rawText = m.text || '';
 
-                // فحص كائن media
                 if (m.media) {
                     if (typeof m.media === 'object' && m.media.url) {
                         if (m.media.type === 'image') detectedImages.push(m.media.url);
@@ -1266,7 +1265,6 @@
                     }
                 }
 
-                // فحص الحقول الفردية
                 const directImg = m.imageUrl || m.image || m.img || m.photo || m.file;
                 if (directImg && isImageSource(directImg)) detectedImages.push(directImg);
 
@@ -1276,13 +1274,11 @@
                 const directVideo = m.videoUrl || m.video;
                 if (directVideo) detectedVideos.push(directVideo);
 
-                // فحص إذا كان نص الرسالة عبارة عن صورة مباشرة
                 if (typeof rawText === 'string' && isImageSource(rawText.trim())) {
                     detectedImages.push(rawText.trim());
-                    rawText = ''; // مسح النص ليظهر فقط كصورة
+                    rawText = '';
                 }
 
-                // بناء صور المرفقات
                 if (detectedImages.length > 0) {
                     detectedImages.forEach(imgSrc => {
                         mediaHtml += `
@@ -1294,7 +1290,6 @@
                     });
                 }
 
-                // بناء الصوت
                 if (detectedAudios.length > 0) {
                     detectedAudios.forEach(audSrc => {
                         mediaHtml += `
@@ -1305,7 +1300,6 @@
                     });
                 }
 
-                // بناء الفيديو
                 if (detectedVideos.length > 0) {
                     detectedVideos.forEach(vidSrc => {
                         mediaHtml += `<video controls class="rounded-xl mt-2 max-h-56 border border-white/10 max-w-full"><source src="${vidSrc}"></video>`;
@@ -1325,7 +1319,6 @@
             body.scrollTop = body.scrollHeight;
         }
 
-        // دوال مساعدة للتعرف على نوع الروابط والملفات
         function isImageSource(str) {
             if (!str || typeof str !== 'string') return false;
             return str.startsWith('data:image') || /\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i.test(str);
