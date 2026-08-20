@@ -189,56 +189,53 @@
             </div>
         </section>
 
-        <!-- 5. رسائل العملاء -->
+        <!-- 5. رسائل العملاء (تم ضبط التجاوب والارتفاع للموبايل لمنع أي قص) -->
         <section id="sec-messages" class="hidden space-y-4">
-            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4">
                 <h2 class="font-black text-lg text-white flex items-center gap-2 pb-3 border-b border-slate-800">
                     <i class="fas fa-comments text-rose-500"></i>
                     <span>صندوق محادثات ورسائل العملاء</span>
                 </h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-[550px] bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
-                    <div class="border-b md:border-b-0 md:border-l border-slate-800 overflow-y-auto p-2 space-y-1.5 bg-slate-900/40" id="inboxUsersList">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-4 bg-slate-950 border border-slate-800 rounded-2xl min-h-[580px] md:h-[600px] overflow-hidden">
+                    <!-- قائمة المحادثات -->
+                    <div class="h-48 md:h-full border-b md:border-b-0 md:border-l border-slate-800 overflow-y-auto p-2 space-y-1.5 bg-slate-900/40" id="inboxUsersList">
                         <p class="text-center text-xs text-slate-500 py-10">لا توجد رسائل واردة</p>
                     </div>
 
-                    <div class="md:col-span-2 flex flex-col justify-between bg-slate-950">
-                        <div class="p-3.5 bg-slate-900/80 border-b border-slate-800 flex justify-between items-center" id="activeChatHeader">
+                    <!-- منطقة عرض المحادثة والرد -->
+                    <div class="md:col-span-2 flex flex-col justify-between bg-slate-950 h-[380px] md:h-full">
+                        <!-- الهيدر -->
+                        <div class="p-3 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center shrink-0" id="activeChatHeader">
                             <span class="text-xs font-bold text-slate-400">حدد محادثة للرد</span>
                         </div>
 
-                        <div class="flex-1 p-4 overflow-y-auto space-y-3" id="activeChatBody">
-                            <div class="text-center text-xs text-slate-600 py-20">اختر أحد العملاء لبدء المراسلة</div>
+                        <!-- جسم الرسائل -->
+                        <div class="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3" id="activeChatBody">
+                            <div class="text-center text-xs text-slate-600 py-16">اختر أحد العملاء لبدء المراسلة</div>
                         </div>
 
-                        <!-- تم ضبط شريط الإدخال ليتوافق بدقة مع شاشات الموبايل -->
-                        <div class="p-2.5 sm:p-3.5 bg-slate-900 border-t border-slate-800 flex flex-col gap-2 relative" id="replyFormContainer" style="display: none;">
-                            <!-- معاينة وسائط الشات قبل الإرسال -->
+                        <!-- شريط الإدخال الثابت بمرونة كاملة للموبايل -->
+                        <div class="p-2 sm:p-3 bg-slate-900 border-t border-slate-800 flex flex-col gap-2 shrink-0" id="replyFormContainer" style="display: none;">
                             <div id="chatMediaPreview" class="hidden"></div>
                             
-                            <div class="flex items-center gap-1.5 sm:gap-2 w-full">
-                                <!-- زر المشبك للملفات -->
+                            <div class="flex items-center gap-1.5 w-full">
                                 <button type="button" onclick="document.getElementById('chatFileInput').click()" title="إرفاق ملف"
-                                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-950 border border-slate-700 hover:border-rose-500 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
-                                    <i class="fas fa-paperclip text-xs sm:text-sm"></i>
+                                    class="w-9 h-9 rounded-xl bg-slate-950 border border-slate-700 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
+                                    <i class="fas fa-paperclip text-xs"></i>
                                 </button>
                                 <input type="file" id="chatFileInput" class="hidden" accept="audio/*,image/*,video/*" onchange="handleChatMediaFile(event)">
 
-                                <!-- زر المايكروفون للتسجيل -->
                                 <button type="button" id="chatRecBtn" onclick="toggleChatAudioRecording()" title="تسجيل صوتي"
-                                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-950 border border-slate-700 hover:border-rose-500 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
-                                    <i class="fas fa-microphone text-xs sm:text-sm"></i>
+                                    class="w-9 h-9 rounded-xl bg-slate-950 border border-slate-700 text-slate-400 hover:text-rose-500 flex items-center justify-center transition shrink-0">
+                                    <i class="fas fa-microphone text-xs"></i>
                                 </button>
-                                
-                                <!-- عداد وقت التسجيل للموبايل -->
-                                <span id="chatRecTimer" class="hidden text-[11px] sm:text-xs text-rose-500 font-bold num-en animate-pulse px-1 shrink-0">00:00</span>
+                                <span id="chatRecTimer" class="hidden text-[10px] text-rose-500 font-bold num-en animate-pulse shrink-0">00:00</span>
 
-                                <!-- حقل كتابة النص -->
                                 <input type="text" id="adminReplyTextInput" placeholder="اكتب ردك هنا..." onkeypress="if(event.key==='Enter') sendAdminReply()"
-                                    class="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
+                                    class="min-w-0 flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-rose-500 outline-none transition">
                                 
-                                <!-- زر الإرسال -->
-                                <button onclick="sendAdminReply()" class="bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shrink-0 shadow-lg shadow-rose-600/20">
+                                <button onclick="sendAdminReply()" class="bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-bold px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1 shrink-0 shadow-lg shadow-rose-600/20">
                                     <i class="fas fa-paper-plane text-xs"></i>
                                     <span class="hidden sm:inline">إرسال</span>
                                 </button>
@@ -699,19 +696,19 @@
             container.classList.remove('hidden');
             let content = '';
             if (currentChatMedia.type === 'image') {
-                content = `<img src="${currentChatMedia.url}" class="h-20 rounded-xl border border-slate-700 object-cover">`;
+                content = `<img src="${currentChatMedia.url}" class="h-16 rounded-xl border border-slate-700 object-cover">`;
             } else if (currentChatMedia.type === 'audio') {
                 content = `
-                    <div class="flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
-                        <i class="fas fa-volume-high text-rose-500"></i>
-                        <audio controls class="h-8 max-w-[200px]"><source src="${currentChatMedia.url}" type="audio/mpeg"></audio>
+                    <div class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+                        <i class="fas fa-volume-high text-rose-500 text-xs"></i>
+                        <audio controls class="h-7 max-w-[180px]"><source src="${currentChatMedia.url}" type="audio/mpeg"></audio>
                     </div>`;
             } else if (currentChatMedia.type === 'video') {
-                content = `<video controls class="h-24 rounded-xl border border-slate-700 max-w-[200px]"><source src="${currentChatMedia.url}"></video>`;
+                content = `<video controls class="h-20 rounded-xl border border-slate-700 max-w-[180px]"><source src="${currentChatMedia.url}"></video>`;
             }
 
             container.innerHTML = `
-                <div class="flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-rose-500/40 w-fit">
+                <div class="flex items-center gap-2 bg-slate-950/90 p-1.5 rounded-xl border border-rose-500/40 w-fit">
                     ${content}
                     <button type="button" onclick="clearChatMedia()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white w-6 h-6 rounded-lg flex items-center justify-center transition text-xs">
                         <i class="fas fa-times"></i>
@@ -726,7 +723,7 @@
 
             if (chatMediaRecorder && chatMediaRecorder.state === 'recording') {
                 chatMediaRecorder.stop();
-                recBtn.innerHTML = '<i class="fas fa-microphone text-xs sm:text-sm"></i>';
+                recBtn.innerHTML = '<i class="fas fa-microphone text-xs"></i>';
                 recBtn.classList.remove('bg-red-600', 'text-white', 'animate-pulse', 'border-red-500');
                 recBtn.classList.add('bg-slate-950', 'text-slate-400', 'border-slate-700');
                 clearInterval(chatRecordInterval);
@@ -754,7 +751,7 @@
                 };
 
                 chatMediaRecorder.start();
-                recBtn.innerHTML = '<i class="fas fa-stop text-xs sm:text-sm"></i>';
+                recBtn.innerHTML = '<i class="fas fa-stop text-xs"></i>';
                 recBtn.classList.remove('bg-slate-950', 'text-slate-400', 'border-slate-700');
                 recBtn.classList.add('bg-red-600', 'text-white', 'animate-pulse', 'border-red-500');
 
@@ -860,7 +857,6 @@
                                             class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
                                     </div>
 
-                                    <!-- أزرار إرفاق وسائط الحل -->
                                     <div class="flex flex-wrap items-center gap-2">
                                         <button type="button" onclick="document.getElementById('adminFileInput_${data.id}').click()" 
                                             class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition">
@@ -881,7 +877,6 @@
                                         </button>
                                     </div>
 
-                                    <!-- معاينة وسائط الحل قبل النشر -->
                                     <div id="adminMediaPreview_${data.id}" class="hidden pt-1"></div>
                                 </div>
                             `;
@@ -1106,7 +1101,7 @@
                 usersList.innerHTML = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    allConversations.push({ id: doc.id, ...data });
+                    allConversations.push({ id: doc.id, ...doc.data() });
                     if (data.isReadByAdmin === false) unreadCount++;
                 });
 
@@ -1121,7 +1116,6 @@
                     const isUnread = data.isReadByAdmin === false;
                     const item = document.createElement('div');
                     
-                    // تمييز المحادثات المقروءة والغير مقروءة بالألوان والحدود
                     let containerClasses = 'p-3 rounded-xl cursor-pointer transition flex flex-col gap-1 border relative ';
                     if (data.id === activeChatVisitorId) {
                         containerClasses += 'bg-rose-500/10 border-rose-500/50 shadow-md shadow-rose-500/10';
@@ -1185,7 +1179,7 @@
                         mediaHtml = `
                             <div class="mt-1.5 p-1.5 bg-black/20 rounded-xl flex items-center gap-2">
                                 <i class="fas fa-volume-high text-xs"></i>
-                                <audio controls class="h-7 max-w-[220px]"><source src="${m.media.url}" type="audio/mpeg"></audio>
+                                <audio controls class="h-7 max-w-[200px]"><source src="${m.media.url}" type="audio/mpeg"></audio>
                             </div>`;
                     } else if (m.media.type === 'video') {
                         mediaHtml = `<video controls class="rounded-xl mt-1.5 max-h-48 border border-white/10 max-w-full"><source src="${m.media.url}"></video>`;
@@ -1194,7 +1188,7 @@
 
                 return `
                     <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
-                        <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-200'} text-xs px-3.5 py-2 rounded-2xl max-w-[80%] space-y-1">
+                        <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-200'} text-xs px-3.5 py-2 rounded-2xl max-w-[85%] space-y-1">
                             <div class="font-bold text-[9px] opacity-75">${escapeHtml(m.senderName)}</div>
                             ${m.text ? `<div>${escapeHtml(m.text)}</div>` : ''}
                             ${mediaHtml}
