@@ -154,7 +154,7 @@
                         <i class="fas fa-clock text-amber-400"></i>
                         <span>مراجعة مشاكل الزوار وكتابة الرد والحل المعتمد</span>
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">اكتب حلك للمشكلة في الحقل واضغط (موافقة ونشر) لينزل المنشور مع حلك المعتمد فقط أسفله</p>
+                    <p class="text-xs text-slate-400 mt-1">اكتب حلك أو أرفق (تسجيل صوتي، ملف صوت MP3، صورة، أو فيديو) ثم اضغط موافقة ونشر</p>
                 </div>
 
                 <div id="pendingPostsList" class="space-y-4">
@@ -417,6 +417,7 @@
                     images: currentPostImages,
                     status: 'approved',
                     adminSolutionComment: '',
+                    adminSolutionMedia: null,
                     reactions: { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 },
                     totalReactions: 0,
                     userReactionsMap: {},
@@ -474,6 +475,143 @@
                 } catch (e) {
                     showToast("حدث خطأ أثناء فك الحظر");
                 }
+            }
+        }
+
+        // ==========================================
+        // 🎙️ إدارة الوسائط المتعددة لحل الأدمن (صوت، صورة، فيديو، تسجيل)
+        // ==========================================
+        let adminMediaMap = {};
+        let mediaRecorders = {};
+        let audioChunks = {};
+        let recordIntervals = {};
+
+        async function handleAdminMediaFile(postId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 25 * 1024 * 1024) {
+                alert("حجم الملف كبير جداً، الحد الأقصى المسموح 25 ميجابايت");
+                event.target.value = '';
+                return;
+            }
+
+            let type = 'file';
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('audio/')) type = 'audio';
+            else if (file.type.startsWith('video/')) type = 'video';
+
+            if (type === 'image') {
+                const base64 = await compressImage(file);
+                setAdminMedia(postId, { type: 'image', url: base64, name: file.name });
+            } else {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setAdminMedia(postId, { type: type, url: e.target.result, name: file.name });
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = '';
+        }
+
+        function setAdminMedia(postId, mediaObj) {
+            adminMediaMap[postId] = mediaObj;
+            renderAdminMediaPreview(postId);
+        }
+
+        function clearAdminMedia(postId) {
+            delete adminMediaMap[postId];
+            renderAdminMediaPreview(postId);
+        }
+
+        function renderAdminMediaPreview(postId) {
+            const container = document.getElementById(`adminMediaPreview_${postId}`);
+            if (!container) return;
+
+            const media = adminMediaMap[postId];
+            if (!media) {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            let content = '';
+            if (media.type === 'image') {
+                content = `<img src="${media.url}" class="h-28 rounded-xl border border-slate-700 object-cover">`;
+            } else if (media.type === 'audio') {
+                content = `
+                    <div class="flex items-center gap-3 bg-slate-900 p-2.5 rounded-xl border border-slate-800 w-full max-w-md">
+                        <i class="fas fa-volume-high text-rose-500 text-lg"></i>
+                        <audio controls class="w-full h-8"><source src="${media.url}" type="audio/mpeg"></audio>
+                    </div>`;
+            } else if (media.type === 'video') {
+                content = `<video controls class="h-32 rounded-xl border border-slate-700 max-w-full"><source src="${media.url}"></video>`;
+            }
+
+            container.innerHTML = `
+                <div class="flex items-center gap-3 bg-slate-950 p-3 rounded-2xl border border-rose-500/30 w-fit">
+                    ${content}
+                    <button type="button" onclick="clearAdminMedia('${postId}')" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white w-7 h-7 rounded-lg flex items-center justify-center transition text-xs">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        async function toggleAdminAudioRecording(postId) {
+            const recBtn = document.getElementById(`recBtn_${postId}`);
+            const timerEl = document.getElementById(`recTimer_${postId}`);
+
+            if (mediaRecorders[postId] && mediaRecorders[postId].state === 'recording') {
+                mediaRecorders[postId].stop();
+                recBtn.innerHTML = '<i class="fas fa-microphone"></i><span>تسجيل صوتي</span>';
+                recBtn.classList.remove('bg-red-600', 'animate-pulse');
+                recBtn.classList.add('bg-slate-800');
+                clearInterval(recordIntervals[postId]);
+                if (timerEl) timerEl.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorders[postId] = mediaRecorder;
+                audioChunks[postId] = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks[postId].push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks[postId], { type: 'audio/mp3' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        setAdminMedia(postId, { type: 'audio', url: e.target.result, name: 'تسجيل صوتي مباشر.mp3' });
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                recBtn.innerHTML = '<i class="fas fa-stop"></i><span>إيقاف وحفظ التسجيل</span>';
+                recBtn.classList.remove('bg-slate-800');
+                recBtn.classList.add('bg-red-600', 'animate-pulse');
+
+                let seconds = 0;
+                if (timerEl) {
+                    timerEl.classList.remove('hidden');
+                    timerEl.innerText = '00:00';
+                    recordIntervals[postId] = setInterval(() => {
+                        seconds++;
+                        const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                        const secs = String(seconds % 60).padStart(2, '0');
+                        timerEl.innerText = `${mins}:${secs}`;
+                    }, 1000);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("يرجى إعطاء صلاحية الميكروفون للبدء في التسجيل الصوتي");
             }
         }
 
@@ -552,17 +690,39 @@
                                 </div>
                                 ${imagesHtml}
 
-                                <div class="pt-3 border-t border-slate-800 space-y-2">
+                                <div class="pt-3 border-t border-slate-800 space-y-3">
                                     <label class="block text-xs font-bold text-rose-400">
-                                        <i class="fas fa-reply"></i> تعليق وحل المهندس محمد السعيد على هذا المنشور (سيظهر معتمداً تحته):
+                                        <i class="fas fa-reply"></i> رد وحل المهندس محمد السعيد (كتابي / صوتي / صورة / فيديو):
                                     </label>
+                                    
                                     <div class="flex gap-2">
                                         <input type="text" id="adminSolutionInput_${data.id}" placeholder="اكتب الحل المعتمد للعميل هنا..." 
                                             class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none transition">
-                                        <button onclick="approvePostWithSolution('${data.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
-                                            <i class="fas fa-check"></i> موافقة ونشر
+                                    </div>
+
+                                    <!-- أزرار إرفاق وسائط الحل -->
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" onclick="document.getElementById('adminFileInput_${data.id}').click()" 
+                                            class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition">
+                                            <i class="fas fa-paperclip text-rose-500"></i>
+                                            <span>إرفاق ملف (صوت MP3 / صورة / فيديو)</span>
+                                        </button>
+                                        <input type="file" id="adminFileInput_${data.id}" class="hidden" accept="audio/*,image/*,video/*" onchange="handleAdminMediaFile('${data.id}', event)">
+
+                                        <button type="button" id="recBtn_${data.id}" onclick="toggleAdminAudioRecording('${data.id}')" 
+                                            class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 transition">
+                                            <i class="fas fa-microphone"></i>
+                                            <span>تسجيل صوتي</span>
+                                        </button>
+                                        <span id="recTimer_${data.id}" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse">00:00</span>
+
+                                        <button onclick="approvePostWithSolution('${data.id}')" class="mr-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-lg shadow-emerald-600/20">
+                                            <i class="fas fa-check"></i> موافقة ونشر الحل
                                         </button>
                                     </div>
+
+                                    <!-- معاينة وسائط الحل قبل النشر -->
+                                    <div id="adminMediaPreview_${data.id}" class="hidden pt-1"></div>
                                 </div>
                             `;
                             pendingListEl.appendChild(card);
@@ -578,6 +738,15 @@
                         approvedPosts.forEach(data => {
                             const card = document.createElement('div');
                             card.className = 'bg-slate-950 border border-slate-800 rounded-2xl p-4 flex justify-between items-center gap-4';
+                            
+                            let mediaBadge = '';
+                            if (data.adminSolutionMedia) {
+                                const type = data.adminSolutionMedia.type;
+                                if (type === 'audio') mediaBadge = '<span class="text-[10px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold mr-2"><i class="fas fa-volume-high ml-1"></i>رد صوتي</span>';
+                                else if (type === 'image') mediaBadge = '<span class="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-md font-bold mr-2"><i class="fas fa-image ml-1"></i>رد بصورة</span>';
+                                else if (type === 'video') mediaBadge = '<span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md font-bold mr-2"><i class="fas fa-video ml-1"></i>رد بفيديو</span>';
+                            }
+
                             card.innerHTML = `
                                 <div class="space-y-1 flex-1">
                                     <div class="flex items-center gap-2">
@@ -585,7 +754,11 @@
                                         ${data.deviceType ? `<span class="text-[10px] text-slate-400">• جهاز: ${escapeHtml(data.deviceType)}</span>` : ''}
                                     </div>
                                     <p class="text-sm text-slate-200 line-clamp-1">${escapeHtml(data.text || '')}</p>
-                                    ${data.adminSolutionComment ? `<p class="text-xs text-emerald-400 line-clamp-1">✅ ردك: ${escapeHtml(data.adminSolutionComment)}</p>` : ''}
+                                    ${data.adminSolutionComment || data.adminSolutionMedia ? `
+                                        <div class="flex items-center text-xs text-emerald-400 line-clamp-1">
+                                            <span>✅ ردك: ${escapeHtml(data.adminSolutionComment || '')}</span>
+                                            ${mediaBadge}
+                                        </div>` : ''}
                                 </div>
                                 <button onclick="deleteCloudPost('${data.id}')" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 rounded-xl text-xs font-bold transition">
                                     <i class="fas fa-trash-alt"></i> حذف
@@ -605,14 +778,28 @@
         async function approvePostWithSolution(postId) {
             const solutionInput = document.getElementById(`adminSolutionInput_${postId}`);
             const solutionText = solutionInput ? solutionInput.value.trim() : '';
+            const attachedMedia = adminMediaMap[postId] || null;
+
+            if (!solutionText && !attachedMedia) {
+                if (!confirm("لم تقم بكتابة حل أو إرفاق أي وسائط (صوت/صورة/فيديو). هل تريد اعتماد ونشر المنشور بدون رد؟")) {
+                    return;
+                }
+            }
 
             try {
-                await db.collection("posts").doc(postId).update({
+                const updatePayload = {
                     status: 'approved',
                     adminSolutionComment: solutionText,
                     approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                showToast("تم اعتماد المنشور ونشره مع حلك المعتمد بنجاح! 🎉");
+                };
+
+                if (attachedMedia) {
+                    updatePayload.adminSolutionMedia = attachedMedia;
+                }
+
+                await db.collection("posts").doc(postId).update(updatePayload);
+                clearAdminMedia(postId);
+                showToast("تم اعتماد المنشور ونشره مع حلك بنجاح! 🎉");
             } catch (e) {
                 console.error(e);
                 showToast("حدث خطأ أثناء الموافقة");
