@@ -199,7 +199,7 @@
             </div>
         </section>
 
-        <!-- 5. رسائل العملاء (شات كامل مثل ماسنجر) -->
+        <!-- 5. رسائل العملاء (شات كامل مثل ماسنجر مع التاريخ والوقت) -->
         <section id="sec-messages" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-3 sm:p-6 shadow-2xl space-y-4">
                 
@@ -323,6 +323,37 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+
+        // دالة تحويل التواريخ لعربية كاملة تشمل اليوم والتاريخ والوقت
+        function formatDateArabic(timestamp) {
+            if (!timestamp) return 'منذ قليل';
+            let date;
+            if (timestamp.toDate) {
+                date = timestamp.toDate();
+            } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+                date = new Date(timestamp);
+            } else {
+                return 'منذ قليل';
+            }
+
+            if (isNaN(date.getTime())) return 'منذ قليل';
+
+            const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+            const dayName = days[date.getDay()];
+            const dayNum = date.getDate();
+            const monthName = months[date.getMonth()];
+            const year = date.getFullYear();
+
+            let hours = date.getHours();
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+
+            return `${dayName}، ${dayNum} ${monthName} ${year} • ${hours}:${minutes} ${ampm}`;
+        }
 
         function openImagePreview(url) {
             if (!url) return;
@@ -861,13 +892,13 @@
                             const card = document.createElement('div');
                             card.className = 'bg-slate-950 border border-amber-500/30 rounded-2xl p-5 space-y-4';
                             
-                            // تفعيل إمكانية تكبير الصور المعلقة بمجرد الضغط عليها
                             let imagesHtml = '';
                             if (data.images && data.images.length > 0) {
                                 imagesHtml = `<div class="grid grid-cols-4 gap-2 pt-2">${data.images.map(src => `<img src="${src}" onclick="openImagePreview('${src}')" class="w-full h-20 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-90 hover:scale-105 transition">`).join('')}</div>`;
                             }
 
                             const devId = data.visitorId || data.deviceId || data.authorName;
+                            const formattedTime = formatDateArabic(data.createdAt);
 
                             card.innerHTML = `
                                 <div class="flex justify-between items-start">
@@ -875,9 +906,14 @@
                                         <img src="${data.authorAvatar || 'https://e.top4top.io/p_3878z3lii0.jpg'}" class="w-12 h-12 rounded-full object-cover border-2 border-amber-400">
                                         <div>
                                             <h4 class="text-sm font-black text-white">${escapeHtml(data.authorName)}</h4>
-                                            <span class="text-xs text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                                جهاز: ${escapeHtml(data.deviceType || 'غير محدد')}
-                                            </span>
+                                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                                <span class="text-[11px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                                                    جهاز: ${escapeHtml(data.deviceType || 'غير محدد')}
+                                                </span>
+                                                <span class="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
+                                                    <i class="far fa-calendar-alt text-amber-500"></i> ${formattedTime}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="flex gap-2">
@@ -951,11 +987,14 @@
                                 else if (type === 'video') mediaBadge = '<span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md font-bold mr-2"><i class="fas fa-video ml-1"></i>رد بفيديو</span>';
                             }
 
+                            const formattedTime = formatDateArabic(data.createdAt);
+
                             card.innerHTML = `
                                 <div class="space-y-1 flex-1">
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs font-bold text-rose-400">${escapeHtml(data.authorName || 'الأدمن')}</span>
                                         ${data.deviceType ? `<span class="text-[10px] text-slate-400">• جهاز: ${escapeHtml(data.deviceType)}</span>` : ''}
+                                        <span class="text-[10px] text-slate-500">• ${formattedTime}</span>
                                     </div>
                                     <p class="text-sm text-slate-200 line-clamp-1">${formatMessageText(data.text || '')}</p>
                                     ${data.adminSolutionComment || data.adminSolutionMedia ? `
@@ -1057,13 +1096,17 @@
                     listEl.innerHTML = '';
                     pendingComments.forEach(data => {
                         const devId = data.visitorId || data.deviceId || data.userName;
+                        const formattedTime = formatDateArabic(data.createdAt);
                         const card = document.createElement('div');
                         card.className = 'p-4 rounded-2xl border bg-amber-500/5 border-amber-500/30';
                         card.innerHTML = `
                             <div class="flex justify-between items-start">
                                 <div>
                                     <h4 class="text-sm font-black text-white">${escapeHtml(data.userName)}</h4>
-                                    <span class="text-[10px] text-amber-400 font-bold">⏳ بانتظار موافقتك</span>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-[10px] text-amber-400 font-bold">⏳ بانتظار موافقتك</span>
+                                        <span class="text-[10px] text-slate-500">• ${formattedTime}</span>
+                                    </div>
                                 </div>
                                 <div class="flex gap-1.5">
                                     <button onclick="approveComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 transition">
@@ -1168,6 +1211,7 @@
                 allConversations.forEach(data => {
                     const devId = data.visitorId || data.id;
                     const isUnread = data.isReadByAdmin === false;
+                    const formattedTime = formatDateArabic(data.updatedAt);
                     const item = document.createElement('div');
                     
                     let containerClasses = 'p-3.5 rounded-2xl cursor-pointer transition flex flex-col gap-1.5 border relative ';
@@ -1193,6 +1237,7 @@
                             </div>
                         </div>
                         <p class="text-xs ${isUnread ? 'text-emerald-100 font-bold' : 'text-slate-400'} truncate">${escapeHtml(data.lastMessage || 'لا توجد رسائل')}</p>
+                        <span class="text-[10px] text-slate-500 font-semibold self-end mt-0.5"><i class="far fa-clock text-slate-600 ml-1"></i>${formattedTime}</span>
                     `;
                     usersList.appendChild(item);
                 });
@@ -1252,6 +1297,7 @@
                 let detectedAudios = [];
                 let detectedVideos = [];
                 let rawText = m.text || '';
+                const msgTime = formatDateArabic(m.time);
 
                 if (m.media) {
                     if (typeof m.media === 'object' && m.media.url) {
@@ -1309,7 +1355,10 @@
                 return `
                     <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
                         <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/10' : 'bg-slate-800 text-slate-200 border border-slate-700'} text-xs sm:text-sm px-4 py-2.5 rounded-2xl max-w-[85%] space-y-1">
-                            <div class="font-bold text-[10px] opacity-75">${escapeHtml(m.senderName || 'عميل')}</div>
+                            <div class="flex justify-between items-center gap-3 text-[10px] opacity-75">
+                                <span class="font-bold">${escapeHtml(m.senderName || 'عميل')}</span>
+                                <span class="font-mono text-[9px]">${msgTime}</span>
+                            </div>
                             ${rawText ? `<div class="leading-relaxed break-words">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
