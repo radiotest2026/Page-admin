@@ -199,7 +199,7 @@
             </div>
         </section>
 
-        <!-- 5. رسائل العملاء (شات كامل مثل ماسنجر مع التاريخ والوقت) -->
+        <!-- 5. رسائل العملاء (شات كامل مثل ماسنجر) -->
         <section id="sec-messages" class="hidden space-y-4">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl p-3 sm:p-6 shadow-2xl space-y-4">
                 
@@ -324,27 +324,23 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // دالة تحويل التواريخ لعربية كاملة تشمل اليوم والتاريخ والوقت
-        function formatDateArabic(timestamp) {
-            if (!timestamp) return 'منذ قليل';
+        // دالة التنسيق المختصر للتاريخ والوقت (مثل: 22 AUG • 6:54 م)
+        function formatDateCompact(timestamp) {
+            if (!timestamp) return 'الآن';
             let date;
             if (timestamp.toDate) {
                 date = timestamp.toDate();
             } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
                 date = new Date(timestamp);
             } else {
-                return 'منذ قليل';
+                return 'الآن';
             }
 
-            if (isNaN(date.getTime())) return 'منذ قليل';
+            if (isNaN(date.getTime())) return 'الآن';
 
-            const days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-            const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-
-            const dayName = days[date.getDay()];
+            const monthsEnShort = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
             const dayNum = date.getDate();
-            const monthName = months[date.getMonth()];
-            const year = date.getFullYear();
+            const monthCode = monthsEnShort[date.getMonth()];
 
             let hours = date.getHours();
             const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -352,7 +348,7 @@
             hours = hours % 12;
             hours = hours ? hours : 12;
 
-            return `${dayName}، ${dayNum} ${monthName} ${year} • ${hours}:${minutes} ${ampm}`;
+            return `${dayNum} ${monthCode} • ${hours}:${minutes} ${ampm}`;
         }
 
         function openImagePreview(url) {
@@ -898,7 +894,7 @@
                             }
 
                             const devId = data.visitorId || data.deviceId || data.authorName;
-                            const formattedTime = formatDateArabic(data.createdAt);
+                            const formattedTime = formatDateCompact(data.createdAt);
 
                             card.innerHTML = `
                                 <div class="flex justify-between items-start">
@@ -911,7 +907,7 @@
                                                     جهاز: ${escapeHtml(data.deviceType || 'غير محدد')}
                                                 </span>
                                                 <span class="text-[10px] text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
-                                                    <i class="far fa-calendar-alt text-amber-500"></i> ${formattedTime}
+                                                    <i class="far fa-clock text-amber-500"></i> ${formattedTime}
                                                 </span>
                                             </div>
                                         </div>
@@ -987,7 +983,7 @@
                                 else if (type === 'video') mediaBadge = '<span class="text-[10px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-md font-bold mr-2"><i class="fas fa-video ml-1"></i>رد بفيديو</span>';
                             }
 
-                            const formattedTime = formatDateArabic(data.createdAt);
+                            const formattedTime = formatDateCompact(data.createdAt);
 
                             card.innerHTML = `
                                 <div class="space-y-1 flex-1">
@@ -1096,7 +1092,7 @@
                     listEl.innerHTML = '';
                     pendingComments.forEach(data => {
                         const devId = data.visitorId || data.deviceId || data.userName;
-                        const formattedTime = formatDateArabic(data.createdAt);
+                        const formattedTime = formatDateCompact(data.createdAt);
                         const card = document.createElement('div');
                         card.className = 'p-4 rounded-2xl border bg-amber-500/5 border-amber-500/30';
                         card.innerHTML = `
@@ -1211,7 +1207,7 @@
                 allConversations.forEach(data => {
                     const devId = data.visitorId || data.id;
                     const isUnread = data.isReadByAdmin === false;
-                    const formattedTime = formatDateArabic(data.updatedAt);
+                    const formattedTime = formatDateCompact(data.updatedAt);
                     const item = document.createElement('div');
                     
                     let containerClasses = 'p-3.5 rounded-2xl cursor-pointer transition flex flex-col gap-1.5 border relative ';
@@ -1228,7 +1224,7 @@
                             <div class="flex items-center gap-2">
                                 ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"></span>' : ''}
                                 <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-300 font-black' : 'text-white'}">
-                                    <i class="fas fa-user ${isUnread ? 'text-emerald-400' : 'text-rose-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
+                                    <i class="fas fa-user ${isUnread ? 'text-emerald-400' : 'text-sky-400'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                                 </span>
                             </div>
                             <div class="flex items-center gap-2">
@@ -1280,7 +1276,7 @@
             const devId = chat.visitorId || chat.id;
 
             document.getElementById('activeChatTitle').innerHTML = `
-                <span class="text-rose-400 font-bold ml-1">عميل:</span> ${escapeHtml(chat.visitorName || 'زائر')}
+                <span class="text-sky-400 font-bold ml-1">عميل:</span> ${escapeHtml(chat.visitorName || 'زائر')}
             `;
 
             document.getElementById('activeChatActions').innerHTML = `
@@ -1297,7 +1293,8 @@
                 let detectedAudios = [];
                 let detectedVideos = [];
                 let rawText = m.text || '';
-                const msgTime = formatDateArabic(m.time);
+                const msgTime = formatDateCompact(m.time);
+                const isAdmin = m.sender === 'admin';
 
                 if (m.media) {
                     if (typeof m.media === 'object' && m.media.url) {
@@ -1340,7 +1337,7 @@
                     detectedAudios.forEach(audSrc => {
                         mediaHtml += `
                             <div class="mt-2 p-2 bg-black/40 rounded-xl flex items-center gap-2 border border-white/10">
-                                <i class="fas fa-volume-high text-xs text-rose-400"></i>
+                                <i class="fas fa-volume-high text-xs text-sky-400"></i>
                                 <audio controls class="h-8 max-w-[220px]"><source src="${audSrc}" type="audio/mpeg"></audio>
                             </div>`;
                     });
@@ -1353,13 +1350,16 @@
                 }
 
                 return `
-                    <div class="flex ${m.sender === 'admin' ? 'justify-start' : 'justify-end'}">
-                        <div class="${m.sender === 'admin' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/10' : 'bg-slate-800 text-slate-200 border border-slate-700'} text-xs sm:text-sm px-4 py-2.5 rounded-2xl max-w-[85%] space-y-1">
-                            <div class="flex justify-between items-center gap-3 text-[10px] opacity-75">
-                                <span class="font-bold">${escapeHtml(m.senderName || 'عميل')}</span>
-                                <span class="font-mono text-[9px]">${msgTime}</span>
+                    <div class="flex ${isAdmin ? 'justify-start' : 'justify-end'}">
+                        <div class="${isAdmin ? 'bg-gradient-to-r from-indigo-900 to-blue-900 border border-blue-500/40 text-white shadow-lg shadow-blue-950/40' : 'bg-slate-900 text-slate-100 border border-slate-800 shadow-md'} text-xs sm:text-sm px-4 py-2.5 rounded-2xl max-w-[85%] space-y-1">
+                            <div class="flex justify-between items-center gap-4 text-[10px] pb-1 border-b ${isAdmin ? 'border-blue-700/50' : 'border-slate-800'}">
+                                <span class="font-bold flex items-center gap-1 ${isAdmin ? 'text-amber-300' : 'text-sky-400'}">
+                                    <i class="fas ${isAdmin ? 'fa-user-shield text-amber-400' : 'fa-user text-sky-400'}"></i>
+                                    ${escapeHtml(m.senderName || (isAdmin ? 'المهندس محمد السعيد' : 'عميل'))}
+                                </span>
+                                <span class="font-mono text-[9px] ${isAdmin ? 'text-blue-200' : 'text-slate-400'}">${msgTime}</span>
                             </div>
-                            ${rawText ? `<div class="leading-relaxed break-words">${formatMessageText(rawText)}</div>` : ''}
+                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-0.5">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
                     </div>
