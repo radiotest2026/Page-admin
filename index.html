@@ -135,7 +135,6 @@
 </head>
 <body class="theme-dark min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
 
-    <!-- نافذة منبثقة للضغط المطول -->
     <div id="msgActionModal" onclick="closeMsgActionModal()" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[1002] hidden flex items-center justify-center p-4">
         <div class="bg-card border rounded-2xl p-4 max-w-xs w-full shadow-2xl space-y-2.5" onclick="event.stopPropagation()">
             <h3 class="text-xs font-black text-slate-400 pb-2 border-b text-center">خيارات الرسالة</h3>
@@ -153,7 +152,6 @@
         </div>
     </div>
 
-    <!-- نافذة تكبير وعرض الصور -->
     <div id="imageModal" onclick="closeImagePreview()" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[1001] hidden flex items-center justify-center p-4 cursor-pointer transition-all duration-300">
         <div class="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onclick="event.stopPropagation()">
             <img id="modalPreviewImg" src="" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-blue-500/30">
@@ -163,7 +161,6 @@
         </div>
     </div>
 
-    <!-- شاشة القفل 108 -->
     <div id="authScreen" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[999] flex items-center justify-center p-4">
         <div class="bg-card border rounded-3xl p-8 max-w-md w-full text-center shadow-2xl space-y-5">
             <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center text-2xl mx-auto">
@@ -181,7 +178,6 @@
         </div>
     </div>
 
-    <!-- الشريط العلوي -->
     <header id="mainHeader" class="bg-card border-b sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-3">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
@@ -207,7 +203,6 @@
         </div>
     </header>
 
-    <!-- المحتوى الرئيسي للوحة -->
     <main id="mainContainer" class="max-w-5xl w-full mx-auto p-4 sm:p-6 flex-1 space-y-6">
         <div id="tabsContainer" class="flex flex-wrap gap-2.5 bg-card p-2 rounded-2xl border">
             <button onclick="switchTab('tab-posts')" id="btn-tab-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-md">
@@ -426,13 +421,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        function getCachedData(key) {
-            try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch(e) { return null; }
-        }
-        function setCachedData(key, data) {
-            try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
-        }
-
         function initTheme() {
             const savedTheme = localStorage.getItem('admin_theme') || 'dark';
             const chatView = document.getElementById('singleChatView');
@@ -536,8 +524,9 @@
             const input = document.getElementById('pinInput').value.trim();
             if (input === '108') {
                 document.getElementById('authScreen').style.display = 'none';
-                sessionStorage.setItem('admin_authed', 'true');
-                showToast('تم تسجيل الدخول بنجاح! أهلاً بك يا باشمهندس محمد');
+                // 💾 حفظ حالة تسجيل الدخول تلقائياً على هذا الجهاز فقط
+                localStorage.setItem('admin_device_authed', 'true');
+                showToast('تم تسجيل الدخول بنجاح وحفظ الجلسة على هذا الجهاز! أهلاً بك يا باشمهندس محمد');
                 initRealtimeListeners();
             } else {
                 showToast('رمز المرور غير صحيح!');
@@ -551,19 +540,16 @@
         });
 
         function logoutAdmin() {
-            sessionStorage.removeItem('admin_authed');
+            // 🗑️ مسح الحفظ الخاص بهذا الجهاز عند الضغط على قفل اللوحة
+            localStorage.removeItem('admin_device_authed');
             location.reload();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
-            const cachedPosts = getCachedData('fast_posts');
-            if (cachedPosts) processPostsData(cachedPosts);
-
-            const cachedMsgs = getCachedData('fast_msgs');
-            if (cachedMsgs) processMessagesData(cachedMsgs);
-
-            if (sessionStorage.getItem('admin_authed') === 'true') {
+            
+            // 🔍 التحقق مما إذا كان هذا الجهاز مسجلاً دخوله مسبقاً
+            if (localStorage.getItem('admin_device_authed') === 'true') {
                 document.getElementById('authScreen').style.display = 'none';
                 initRealtimeListeners();
             }
@@ -1027,12 +1013,6 @@
                 allPosts.push({ id, ...data });
             });
 
-            allPosts.sort((a, b) => {
-                const timeA = (a.createdAt && a.createdAt.toDate) ? a.createdAt.toDate().getTime() : 0;
-                const timeB = (b.createdAt && b.createdAt.toDate) ? b.createdAt.toDate().getTime() : 0;
-                return timeB - timeA;
-            });
-
             const pendingPosts = allPosts.filter(p => p.status === 'pending');
             const approvedPosts = allPosts.filter(p => p.status === 'approved' || p.status === undefined);
 
@@ -1098,7 +1078,7 @@
 
                             <div class="pt-3 border-t space-y-3">
                                 <label class="block text-xs font-bold text-blue-500">
-                                    <i class="fas fa-reply"></i> رد وحل المهندس محمد السعيد (كتابي / صوتي / صورة / فيديو):
+                                    <i class="fas fa-reply"></i> رد وحل المهندس محمد السعيد:
                                 </label>
                                 
                                 <div class="flex gap-2">
@@ -1121,7 +1101,7 @@
                                     </button>
                                     <span id="recTimer_${data.id}" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse">00:00</span>
 
-                                    <button onclick="approvePostWithSolution('${data.id}')" class="mr-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
+                                    <button onclick="approvePostWithSolution('${data.id}')" class="mr-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
                                         <i class="fas fa-check"></i> موافقة ونشر الحل
                                     </button>
                                 </div>
@@ -1250,29 +1230,11 @@
         }
 
         function initRealtimeListeners() {
-            const cachedPosts = getCachedData('fast_posts');
-            if (cachedPosts) processPostsData(cachedPosts);
-
-            const cachedMsgs = getCachedData('fast_msgs');
-            if (cachedMsgs) processMessagesData(cachedMsgs);
-
-            db.collection("posts").get().then(snap => {
-                setCachedData('fast_posts', snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                processPostsData(snap.docs);
-            }).catch(() => {});
-
-            db.collection("messages").get().then(snap => {
-                setCachedData('fast_msgs', snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                processMessagesData(snap.docs);
-            }).catch(() => {});
-
             db.collection("posts").onSnapshot((snapshot) => {
-                setCachedData('fast_posts', snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
                 processPostsData(snapshot.docs);
             });
 
             db.collection("messages").onSnapshot((snapshot) => {
-                setCachedData('fast_msgs', snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
                 processMessagesData(snapshot.docs);
             });
 
@@ -1334,12 +1296,6 @@
                         pendingComments.push({ id: doc.id, ...doc.data() });
                     });
 
-                    pendingComments.sort((a, b) => {
-                        const timeA = (a.createdAt && a.createdAt.toDate) ? a.createdAt.toDate().getTime() : 0;
-                        const timeB = (b.createdAt && b.createdAt.toDate) ? b.createdAt.toDate().getTime() : 0;
-                        return timeB - timeA;
-                    });
-
                     if (badge) {
                         if (pendingComments.length > 0) {
                             badge.classList.remove('hidden');
@@ -1351,7 +1307,7 @@
 
                     if (!listEl) return;
                     if (pendingComments.length === 0) {
-                        listEl.innerHTML = '<p class="text-center py-10 text-sm">لا توجد أي تعليقات جديدة معلقة للمراجعة ✅</p>';
+                        listEl.innerHTML = '<p class="text-center py-10 text-sm">لا توجد أي تعليقات جديدة للمراجعة ✅</p>';
                         return;
                     }
 
@@ -1461,7 +1417,6 @@
             cancelMessageEdit();
         }
 
-        // ⏱️ تعديل مؤقت الضغط المطول ليصبح ثانيتين (2000 مللي ثانية) لتجنب اللمس الخاطئ أثناء التمرير
         function handleMsgTouchStart(index, isSenderAdmin) {
             if (!isSenderAdmin) return;
             pressTimer = setTimeout(() => {
@@ -1622,7 +1577,7 @@
                                 </span>
                                 <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : ''}">${msgTime}</span>
                             </div>
-                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base">${formatMessageText(rawText)}</div>` : ''}
+                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
                     </div>
