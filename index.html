@@ -316,10 +316,10 @@
             <div class="bg-card border rounded-3xl p-5 sm:p-7 shadow-lg space-y-4">
                 <h2 class="font-black text-lg flex items-center gap-2 pb-3 border-b">
                     <i class="fas fa-comments text-sky-500"></i>
-                    <span>مراجعة التعليقات الواردة على المنشورات</span>
+                    <span>مراجعة التعليقات المعلقة</span>
                 </h2>
                 <div id="pendingCommentsList" class="space-y-3">
-                    <p class="text-center py-10 text-sm">جاري جلب التعليقات...</p>
+                    <p class="text-center py-10 text-sm">لا توجد تعليقات جديدة للمراجعة</p>
                 </div>
             </div>
         </section>
@@ -1267,7 +1267,7 @@
             db.collection("messages").onSnapshot((snapshot) => {
                 processMessagesData(snapshot.docs);
                 snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
+                    if (change.type === "added" || change.type === "modified") {
                         const msgData = change.doc.data();
                         if (msgData.isReadByAdmin === false) {
                             sendTelegramNotification(`📩 رسالة جديدة من: ${msgData.visitorName || 'عميل'}\nالنص: ${msgData.lastMessage || ''}`);
@@ -1322,88 +1322,133 @@
             }
         }
 
-        // 🎯 استماع دقيق ومطابق تماماً لكودك الأصلي السليم لجلب التعليقات المعلقة (comments_pending)
+        // 🎯 الاستماع المزدوج (التعليقات المعلقة في جدول مستقل + تعليقات المنشورات المباشرة) لضمان ظهورها 100%
         function listenToPendingComments() {
+            // 1. الاستماع لجدول comments_pending
             db.collection("comments_pending")
-                .where("status", "==", "pending")
-                .onSnapshot((snapshot) => {
-                    const listEl = document.getElementById('pendingCommentsList');
-                    const badge = document.getElementById('pendingCommentsBadge');
-                    
-                    let pendingComments = [];
-                    snapshot.forEach(doc => {
-                        pendingComments.push({ id: doc.id, ...doc.data() });
-                        if (doc.metadata.hasPendingWrites === false) {
-                            sendTelegramNotification(`💬 تعليق معلق جديد من: ${doc.data().userName || 'زائر'}\nالنص: ${doc.data().text || ''}`);
+                .onSnapshot((snapshot1) => {
+                    // 2. الاستماع لجدول posts لجلب أي تعليقات داخلية
+                    db.collection("posts").onSnapshot((snapshot2) => {
+                        const listEl = document.getElementById('pendingCommentsList');
+                        const badge = document.getElementById('pendingCommentsBadge');
+                        
+                        let allPendingComments = [];
+
+                        // جمع التعليقات من جدول comments_pending
+                        snapshot1.forEach(doc => {
+                            const data = doc.data();
+                            if (!data.status || data.status === 'pending') {
+                                allPendingComments.push({ id: doc.id, ...data });
+                            }
+                        });
+
+                        // جمع التعليقات من مصفوفات المنشورات (posts -> comments)
+                        snapshot2.forEach(postDoc => {
+                            const postData = postDoc.data();
+                            if (postData.comments && Array.isArray(postData.comments)) {
+                                postData.comments.forEach((c, idx) => {
+                                    if (!c.status || c.status === 'pending') {
+                                        allPendingComments.push({
+                                            id: postDoc.id + '_comment_' + idx,
+                                            postId: postDoc.id,
+                                            userName: c.userName || 'زائر',
+                                            text: c.text || '',
+                                            createdAt: c.createdAt || postData.createdAt
+                                        });
+                                    }
+                                });
+                            }
+                        });
+
+                        if (badge) {
+                            if (allPendingComments.length > 0) {
+                                badge.classList.remove('hidden');
+                                badge.innerText = allPendingComments.length;
+                            } else {
+                                badge.classList.add('hidden');
+                            }
                         }
-                    });
 
-                    if (badge) {
-                        if (pendingComments.length > 0) {
-                            badge.classList.remove('hidden');
-                            badge.innerText = pendingComments.length;
-                        } else {
-                            badge.classList.add('hidden');
+                        if (!listEl) return;
+                        if (allPendingComments.length === 0) {
+                            listEl.innerHTML = '<p class="text-center py-10 text-sm">لا توجد أي تعليقات جديدة للمراجعة ✅</p>';
+                            return;
                         }
-                    }
 
-                    if (!listEl) return;
-                    if (pendingComments.length === 0) {
-                        listEl.innerHTML = '<p class="text-center py-10 text-sm">لا توجد أي تعليقات جديدة للمراجعة ✅</p>';
-                        return;
-                    }
-
-                    listEl.innerHTML = '';
-                    pendingComments.forEach(data => {
-                        const devId = data.visitorId || data.deviceId || data.userName;
-                        const formattedTime = formatDateCompact(data.createdAt);
-                        const card = document.createElement('div');
-                        card.className = 'p-4 rounded-2xl border bg-amber-500/10 border-amber-500/30';
-                        card.innerHTML = `
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="text-sm font-black">${escapeHtml(data.userName)}</h4>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-[10px] text-amber-400 font-bold">⏳ بانتظار موافقتك</span>
-                                        <span class="text-[10px]">• ${formattedTime}</span>
+                        listEl.innerHTML = '';
+                        allPendingComments.forEach(data => {
+                            const devId = data.visitorId || data.deviceId || data.userName;
+                            const formattedTime = formatDateCompact(data.createdAt);
+                            const card = document.createElement('div');
+                            card.className = 'p-4 rounded-2xl border bg-amber-500/10 border-amber-500/30';
+                            card.innerHTML = `
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h4 class="text-sm font-black">${escapeHtml(data.userName)}</h4>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-[10px] text-amber-400 font-bold">⏳ بانتظار موافقتك</span>
+                                            <span class="text-[10px]">• ${formattedTime}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-1.5">
+                                        <button onclick="approveComment('${data.id}', '${data.postId || ''}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 transition">
+                                            <i class="fas fa-check"></i> موافقة
+                                        </button>
+                                        <button onclick="deleteComment('${data.id}', '${data.postId || ''}')" class="px-3 py-1.5 bg-red-600/15 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition border border-red-500/20">
+                                            <i class="fas fa-trash"></i> حذف
+                                        </button>
+                                        <button onclick="banUserDevice('${devId}', '${escapeHtml(data.userName)}')" class="px-3 py-1.5 bg-red-600/15 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition border border-red-500/20">
+                                            <i class="fas fa-ban"></i> حظر
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="approveComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-500 transition">
-                                        <i class="fas fa-check"></i> موافقة
-                                    </button>
-                                    <button onclick="deleteComment('${data.id}', '${data.postId}')" class="px-3 py-1.5 bg-red-600/15 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition border border-red-500/20">
-                                        <i class="fas fa-trash"></i> حذف
-                                    </button>
-                                    <button onclick="banUserDevice('${devId}', '${escapeHtml(data.userName)}')" class="px-3 py-1.5 bg-red-600/15 text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition border border-red-500/20">
-                                        <i class="fas fa-ban"></i> حظر
+                                <p class="text-xs sm:text-sm bg-card p-2.5 rounded-xl mt-2 leading-relaxed border">${formatMessageText(data.text || '')}</p>
+                                <div class="pt-2 flex gap-2">
+                                    <input type="text" id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (اختياري)..." value="${escapeHtml(data.replyText || '')}"
+                                        class="flex-1 input-field border rounded-xl px-3 py-1.5 text-xs">
+                                    <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId || ''}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-500 transition">
+                                        حفظ الرد ونشر
                                     </button>
                                 </div>
-                            </div>
-                            <p class="text-xs sm:text-sm bg-card p-2.5 rounded-xl mt-2 leading-relaxed border">${formatMessageText(data.text || '')}</p>
-                            <div class="pt-2 flex gap-2">
-                                <input type="text" id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (اختياري)..." value="${escapeHtml(data.replyText || '')}"
-                                    class="flex-1 input-field border rounded-xl px-3 py-1.5 text-xs">
-                                <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-500 transition">
-                                    حفظ الرد ونشر
-                                </button>
-                            </div>
-                        `;
-                        listEl.appendChild(card);
+                            `;
+                            listEl.appendChild(card);
+                        });
                     });
                 });
         }
 
         async function approveComment(commentId, postId) {
             try {
-                await db.collection("comments_pending").doc(commentId).update({
-                    status: 'approved',
-                    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await db.collection("posts").doc(postId).update({
-                    commentsCount: firebase.firestore.FieldValue.increment(1)
-                });
-                showToast("تمت الموافقة على التعليق ونشره على الموقع بنجاح! ✅");
+                if (commentId.includes('_comment_')) {
+                    // إذا كان التعليق داخل مصفوفة المنشور
+                    const realPostId = postId;
+                    const postRef = db.collection("posts").doc(realPostId);
+                    const docSnap = await postRef.get();
+                    if (docSnap.exists) {
+                        let postData = docSnap.data();
+                        let comments = postData.comments || [];
+                        const index = parseInt(commentId.split('_comment_')[1]);
+                        if (comments[index]) {
+                            comments[index].status = 'approved';
+                            await postRef.update({ 
+                                comments: comments,
+                                commentsCount: firebase.firestore.FieldValue.increment(1)
+                            });
+                        }
+                    }
+                } else {
+                    // إذا كان في جدول comments_pending
+                    await db.collection("comments_pending").doc(commentId).update({
+                        status: 'approved',
+                        approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    if (postId) {
+                        await db.collection("posts").doc(postId).update({
+                            commentsCount: firebase.firestore.FieldValue.increment(1)
+                        }).catch(() => {});
+                    }
+                }
+                showToast("تمت الموافقة على التعليق ونشره بنجاح! ✅");
             } catch (err) {
                 showToast("حدث خطأ أثناء الموافقة");
             }
@@ -1412,15 +1457,35 @@
         async function saveAdminReplyToComment(commentId, postId) {
             const text = document.getElementById(`adminReplyInput_${commentId}`).value.trim();
             try {
-                await db.collection("comments_pending").doc(commentId).update({
-                    replyText: text,
-                    status: 'approved',
-                    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await db.collection("posts").doc(postId).update({
-                    commentsCount: firebase.firestore.FieldValue.increment(1)
-                });
-                showToast("تم حفظ ردك الرسمي ونشر التعليق على الموقع! ✅");
+                if (commentId.includes('_comment_')) {
+                    const postRef = db.collection("posts").doc(postId);
+                    const docSnap = await postRef.get();
+                    if (docSnap.exists) {
+                        let postData = docSnap.data();
+                        let comments = postData.comments || [];
+                        const index = parseInt(commentId.split('_comment_')[1]);
+                        if (comments[index]) {
+                            comments[index].replyText = text;
+                            comments[index].status = 'approved';
+                            await postRef.update({ 
+                                comments: comments,
+                                commentsCount: firebase.firestore.FieldValue.increment(1)
+                            });
+                        }
+                    }
+                } else {
+                    await db.collection("comments_pending").doc(commentId).update({
+                        replyText: text,
+                        status: 'approved',
+                        approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    if (postId) {
+                        await db.collection("posts").doc(postId).update({
+                            commentsCount: firebase.firestore.FieldValue.increment(1)
+                        }).catch(() => {});
+                    }
+                }
+                showToast("تم حفظ الرد ونشر التعليق! ✅");
             } catch (err) {
                 showToast("حدث خطأ أثناء الحفظ");
             }
@@ -1429,7 +1494,19 @@
         async function deleteComment(commentId, postId) {
             if (confirm("هل تريد رفض وحذف هذا التعليق نهائياً؟")) {
                 try {
-                    await db.collection("comments_pending").doc(commentId).delete();
+                    if (commentId.includes('_comment_')) {
+                        const postRef = db.collection("posts").doc(postId);
+                        const docSnap = await postRef.get();
+                        if (docSnap.exists) {
+                            let postData = docSnap.data();
+                            let comments = postData.comments || [];
+                            const index = parseInt(commentId.split('_comment_')[1]);
+                            comments.splice(index, 1);
+                            await postRef.update({ comments: comments });
+                        }
+                    } else {
+                        await db.collection("comments_pending").doc(commentId).delete();
+                    }
                     showToast("تم حذف التعليق");
                 } catch (err) {
                     showToast("تعذر حذف التعليق");
