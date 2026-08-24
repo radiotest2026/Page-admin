@@ -45,42 +45,42 @@
             color: #f1f5f9 !important;
         }
         .theme-dark .chat-admin-bubble {
-            background-color: #1e3a8a !important;
+            background-color: #1e3a8a;
             color: #ffffff !important;
-            border: 1px solid #3b82f6 !important;
+            border: 1px solid #3b82f6;
         }
         .theme-dark .chat-user-bubble {
-            background-color: #1e293b !important;
-            color: #f1f5f9 !important;
-            border: 1px solid #334155 !important;
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #334155;
         }
 
         /* ==========================================
            ☀️ الوضع النهاري (Light Mode)
         ========================================== */
         body.theme-light {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
+            background-color: #f1f5f9;
+            color: #0f172a;
         }
         body.theme-light header {
             background-color: #ffffff !important;
-            border-color: #e2e8f0 !important;
+            border-color: #cbd5e1 !important;
             color: #0f172a !important;
         }
         body.theme-light .bg-card {
             background-color: #ffffff !important;
-            border-color: #e2e8f0 !important;
+            border-color: #cbd5e1 !important;
             color: #0f172a !important;
         }
         body.theme-light .bg-box {
-            background-color: #f1f5f9 !important;
+            background-color: #e2e8f0 !important;
             border-color: #cbd5e1 !important;
             color: #0f172a !important;
         }
         body.theme-light .input-field {
             background-color: #ffffff !important;
             color: #0f172a !important;
-            border-color: #cbd5e1 !important;
+            border-color: #94a3b8 !important;
         }
         body.theme-light h1, body.theme-light h2, body.theme-light h3, body.theme-light h4, body.theme-light p, body.theme-light span, body.theme-light label {
             color: #0f172a !important;
@@ -100,15 +100,15 @@
         #singleChatView.chat-theme-light footer * {
             color: #0f172a !important;
         }
-        #singleChatView.chat-theme-light input, #singleChatView.chat-theme-light textarea {
+        #singleChatView.chat-theme-light input {
             background-color: #ffffff !important;
             color: #0f172a !important;
             border-color: #cbd5e1 !important;
         }
         .theme-light .chat-admin-bubble {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            background: linear-gradient(135deg, #1e40af, #2563eb) !important;
             color: #ffffff !important;
-            border: 1px solid #1e40af !important;
+            border: 1px solid #1d4ed8 !important;
         }
         .theme-light .chat-admin-bubble * {
             color: #ffffff !important;
@@ -122,19 +122,20 @@
             color: #0f172a !important;
         }
         
-        /* 🟡 اللون الذهبي البراق لاسم المهندس محمد السعيد */
+        /* 🟡 اللون الذهبي البراق المعتمد لاسم المهندس محمد السعيد */
         .admin-sender-name, .admin-sender-name span {
             color: #fde047 !important;
             font-weight: 900 !important;
         }
 
+        /* كبسولة توقيت رد الأدمن */
         .admin-msg-time {
             color: #f8fafc !important;
             background-color: rgba(255, 255, 255, 0.2);
             padding: 2px 8px;
             border-radius: 6px;
         }
-        
+
         /* 🟢 الخط الفاصل الأخضر الفاتح الرفيع والأنيق */
         .chat-divider-green {
             border-color: #4ade80 !important;
@@ -432,10 +433,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 🚀 دالة إرسال الإشعار الفوري لتيليجرام عند وصول أي رسالة أو تعليق جديد
+        // 🚀 دالة إرسال التنبيه الفوري لتيليجرام عند وصول تعليق أو رسالة جديدة
         function sendTelegramNotification(textMsg) {
-            const botToken = "8818708867:AAG2-4-7Vl7VhPR0uiIRG-WQs9rdSk1Z-Ck"; //
-            const chatId = "5045364432"; //
+            const botToken = "8818708867:AAG2-4-7Vl7VhPR0uiIRG-WQs9rdSk1Z-Ck";
+            const chatId = "5045364432";
             const url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(textMsg);
             fetch(url).catch(e => console.log(e));
         }
@@ -1022,7 +1023,7 @@
             }
         }
 
-        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً) وسحب البيانات بدقة
+        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً) مع إرسال إشعار تيليجرام عند وصول تعليق جديد
         function processPostsData(snapshotDocs) {
             const totalEl = document.getElementById('postsTotalCount');
             const listEl = document.getElementById('adminPostsList');
@@ -1034,6 +1035,15 @@
                 const data = doc.data ? doc.data() : doc;
                 const id = doc.id ? doc.id : (data.id || Math.random());
                 allPosts.push({ id, ...data });
+
+                // 🔔 رصد التعليقات الجديدة داخل المنشورات وإرسال إشعار تيليجرام فوري
+                if (data.comments && Array.isArray(data.comments)) {
+                    data.comments.forEach(c => {
+                        if (!c.status || c.status === 'pending') {
+                            sendTelegramNotification(`💬 تعليق جديد من: ${c.userName || 'زائر'} على منشورك!\nالنص: ${c.text || ''}`);
+                        }
+                    });
+                }
             });
 
             // 🔄 الترتيب التنازلي: أحدث منشور في القمة دائماً
@@ -1266,7 +1276,7 @@
 
             db.collection("messages").onSnapshot((snapshot) => {
                 processMessagesData(snapshot.docs);
-                // 🔔 إرسال إشعار تيليجرام عند وصول رسالة جديدة
+                // 🔔 إرسال إشعار تيليجرام فوري عند وصول رسالة جديدة من العملاء
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const msgData = change.doc.data();
@@ -1333,9 +1343,9 @@
                     let pendingComments = [];
                     snapshot.forEach(doc => {
                         pendingComments.push({ id: doc.id, ...doc.data() });
-                        // 🔔 إرسال إشعار تيليجرام عند وصول تعليق جديد
+                        // 🔔 إرسال إشعار تيليجرام عند وصول تعليق معلق جديد
                         if (doc.metadata.hasPendingWrites === false) {
-                            sendTelegramNotification(`💬 تعليق جديد بانتظار الموافقة من: ${doc.data().userName || 'زائر'}`);
+                            sendTelegramNotification(`💬 تعليق معلق جديد من: ${doc.data().userName || 'زائر'}\nالنص: ${doc.data().text || ''}`);
                         }
                     });
 
@@ -1606,6 +1616,7 @@
                     });
                 }
 
+                // 🎯 اسم الأدمن باللون الذهبي البراق، والخط الفاصل أخضر رفيع وأنيق
                 return `
                     <div class="flex ${isAdmin ? 'justify-start' : 'justify-end'} w-full">
                         <div 
@@ -1617,10 +1628,10 @@
                             <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b chat-divider-green">
                                 <span class="font-black flex items-center gap-1.5 ${isAdmin ? 'admin-sender-name' : ''}">
                                     <i class="fas ${isAdmin ? 'fa-user-shield text-amber-300' : 'fa-user'}"></i>
-                                    <span>${escapeHtml(m.senderName || (isAdmin ? 'المهندس محمد السعيد' : 'عميل'))}</span>
+                                    <span style="${isAdmin ? 'color: #fde047 !important;' : ''}">${escapeHtml(m.senderName || (isAdmin ? 'المهندس محمد السعيد' : 'عميل'))}</span>
                                     ${isAdmin ? '<i class="fas fa-check-circle text-sky-400 text-xs ml-0.5"></i>' : ''}
                                 </span>
-                                <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : ''}">${msgTime}</span>
+                                <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : 'opacity-75'}">${msgTime}</span>
                             </div>
                             ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
@@ -1765,7 +1776,7 @@
         function formatMessageText(text) {
             if (!text) return '';
             const safeText = escapeHtml(text);
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            const urlRegex = /(https?:\/|[^\s]+)/g;
             return safeText.replace(urlRegex, function(url) {
                 return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline hover:opacity-80 font-bold break-all">${url}</a>`;
             });
