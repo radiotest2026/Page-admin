@@ -20,6 +20,9 @@
         ::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
 
+        textarea { resize: none !important; }
+        textarea::-webkit-resizer { display: none !important; }
+
         /* ==========================================
            🎨 الوضع الليلي (Dark Mode)
         ========================================== */
@@ -119,17 +122,25 @@
             color: #0f172a !important;
         }
         
-        /* 🟡 اللون الذهبي البراق لاسم المهندس محمد السعيد */
-        .admin-sender-name {
+        /* 🟡 اللون الذهبي البراق المعتمد لاسم المهندس محمد السعيد */
+        .admin-sender-name, .admin-sender-name span {
             color: #fde047 !important;
             font-weight: 900 !important;
         }
+
         /* كبسولة توقيت رد الأدمن */
         .admin-msg-time {
             color: #f8fafc !important;
             background-color: rgba(255, 255, 255, 0.2);
             padding: 2px 8px;
             border-radius: 6px;
+        }
+
+        /* 🟢 الخط الفاصل الأخضر الفاتح الرفيع والأنيق */
+        .chat-divider-green {
+            border-color: #4ade80 !important;
+            border-bottom-width: 1px !important;
+            opacity: 0.8 !important;
         }
     </style>
 </head>
@@ -377,7 +388,7 @@
                 <span class="flex items-center gap-1.5"><i class="fas fa-pen"></i> جاري تعديل الرسالة الآن...</span>
                 <button onclick="cancelMessageEdit()" class="text-red-500 hover:underline">إلغاء التعديل</button>
             </div>
-            <div class="flex items-center gap-2 w-full max-w-4xl mx-auto">
+            <div class="flex items-center gap-2 w-full max-w-4xl mx-auto items-end">
                 <button type="button" onclick="document.getElementById('chatFileInput').click()" title="إرفاق ملف"
                     class="w-11 h-11 rounded-2xl bg-box border flex items-center justify-center transition shrink-0 hover:border-blue-500">
                     <i class="fas fa-paperclip text-sm sm:text-base"></i>
@@ -390,10 +401,11 @@
                 </button>
                 <span id="chatRecTimer" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse shrink-0">00:00</span>
 
-                <input type="text" id="adminReplyTextInput" placeholder="اكتب ردك هنا..." onkeypress="if(event.key==='Enter') sendAdminReply()"
-                    class="min-w-0 flex-1 input-field border rounded-2xl px-4 py-3 text-sm sm:text-base focus:border-blue-500 outline-none transition font-medium">
+                <textarea id="adminReplyTextInput" placeholder="اكتب ردك هنا..." rows="1"
+                    oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+                    class="min-w-0 flex-1 input-field border rounded-2xl px-4 py-3 text-sm sm:text-base focus:border-blue-500 outline-none transition font-medium resize-none max-h-36 overflow-y-auto"></textarea>
                 
-                <button onclick="sendAdminReply()" id="sendMsgBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 sm:px-7 py-3 rounded-2xl text-sm sm:text-base transition flex items-center justify-center gap-1.5 shrink-0 shadow-md">
+                <button onclick="sendAdminReply()" id="sendMsgBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 sm:px-7 py-3 rounded-2xl text-sm sm:text-base transition flex items-center justify-center gap-1.5 shadow-md">
                     <i class="fas fa-paperplane text-xs sm:text-sm text-white" id="sendBtnIcon"></i>
                     <span id="sendBtnLabel" class="text-white font-black">إرسال</span>
                 </button>
@@ -524,9 +536,8 @@
             const input = document.getElementById('pinInput').value.trim();
             if (input === '108') {
                 document.getElementById('authScreen').style.display = 'none';
-                // 💾 حفظ حالة تسجيل الدخول تلقائياً على هذا الجهاز فقط
                 localStorage.setItem('admin_device_authed', 'true');
-                showToast('تم تسجيل الدخول بنجاح وحفظ الجلسة على هذا الجهاز! أهلاً بك يا باشمهندس محمد');
+                showToast('تم تسجيل الدخول بنجاح! أهلاً بك يا باشمهندس محمد');
                 initRealtimeListeners();
             } else {
                 showToast('رمز المرور غير صحيح!');
@@ -540,15 +551,19 @@
         });
 
         function logoutAdmin() {
-            // 🗑️ مسح الحفظ الخاص بهذا الجهاز عند الضغط على قفل اللوحة
             localStorage.removeItem('admin_device_authed');
             location.reload();
         }
 
+        window.addEventListener('popstate', (event) => {
+            const chatView = document.getElementById('singleChatView');
+            if (chatView && !chatView.classList.contains('hidden')) {
+                backToConversationsList();
+            }
+        });
+
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
-            
-            // 🔍 التحقق مما إذا كان هذا الجهاز مسجلاً دخوله مسبقاً
             if (localStorage.getItem('admin_device_authed') === 'true') {
                 document.getElementById('authScreen').style.display = 'none';
                 initRealtimeListeners();
@@ -1000,6 +1015,7 @@
             }
         }
 
+        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً)
         function processPostsData(snapshotDocs) {
             const totalEl = document.getElementById('postsTotalCount');
             const listEl = document.getElementById('adminPostsList');
@@ -1011,6 +1027,13 @@
                 const data = doc.data ? doc.data() : doc;
                 const id = doc.id ? doc.id : (data.id || Math.random());
                 allPosts.push({ id, ...data });
+            });
+
+            // 🔄 الترتيب التنازلي: أحدث منشور في القمة دائماً
+            allPosts.sort((a, b) => {
+                const timeA = (a.createdAt && a.createdAt.toMillis) ? a.createdAt.toMillis() : (new Date(a.createdAt || 0).getTime());
+                const timeB = (b.createdAt && b.createdAt.toMillis) ? b.createdAt.toMillis() : (new Date(b.createdAt || 0).getTime());
+                return timeB - timeA;
             });
 
             const pendingPosts = allPosts.filter(p => p.status === 'pending');
@@ -1101,7 +1124,7 @@
                                     </button>
                                     <span id="recTimer_${data.id}" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse">00:00</span>
 
-                                    <button onclick="approvePostWithSolution('${data.id}')" class="mr-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
+                                    <button onclick="approvePostWithSolution('${data.id}')" class="mr-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
                                         <i class="fas fa-check"></i> موافقة ونشر الحل
                                     </button>
                                 </div>
@@ -1404,6 +1427,8 @@
             document.getElementById('singleChatView').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
 
+            history.pushState({ chatOpen: true }, "");
+
             cancelMessageEdit();
             db.collection("messages").doc(visitorDocId).update({ isReadByAdmin: true }).catch(() => {});
             renderActiveChatMessages();
@@ -1466,7 +1491,7 @@
             let messages = [...(chat.messages || [])];
             messages.splice(selectedMessageIndexForAction, 1);
 
-            const lastMsg = messages.length > 0 ? (messages[messages.length - 1].text || '[مرفق]') : 'لا توجد رسائل';
+            const lastMsg = messages.length > 0 ? (messages[messages.length - 1].text || '[mرفق]') : 'لا توجد رسائل';
 
             try {
                 await db.collection("messages").doc(activeChatVisitorId).update({
@@ -1568,16 +1593,16 @@
                             onmouseup="handleMsgTouchEnd()"
                             ontouchstart="handleMsgTouchStart(${idx}, ${isAdmin})"
                             ontouchend="handleMsgTouchEnd()"
-                            class="${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-all">
-                            <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b border-sub">
+                            class="${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-all shadow-md">
+                            <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b chat-divider-green">
                                 <span class="font-black flex items-center gap-1.5 ${isAdmin ? 'admin-sender-name' : ''}">
-                                    <i class="fas ${isAdmin ? 'fa-user-shield text-amber-300' : 'fa-user'}"></i>
+                                    <i class="fas ${isAdmin ? 'fa-user-shield' : 'fa-user'}"></i>
                                     <span>${escapeHtml(m.senderName || (isAdmin ? 'المهندس محمد السعيد' : 'عميل'))}</span>
                                     ${isAdmin ? '<i class="fas fa-check-circle text-sky-400 text-xs ml-0.5"></i>' : ''}
                                 </span>
-                                <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : ''}">${msgTime}</span>
+                                <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : 'opacity-75'}">${msgTime}</span>
                             </div>
-                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
+                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
                     </div>
@@ -1658,6 +1683,7 @@
                 }, { merge: true });
 
                 input.value = '';
+                input.style.height = 'auto';
                 clearChatMedia();
                 showToast("تم إرسال الرد بنجاح!");
             } catch (err) {
