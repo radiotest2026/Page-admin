@@ -122,7 +122,7 @@
             color: #0f172a !important;
         }
         
-        /* 🟡 اللون الذهبي البراق المعتمد لاسم المهندس محمد السعيد */
+        /* 🟡 اللون الذهبي البراق لاسم المهندس محمد السعيد */
         .admin-sender-name, .admin-sender-name span {
             color: #fde047 !important;
             font-weight: 900 !important;
@@ -136,7 +136,7 @@
             border-radius: 6px;
         }
 
-        /* 🟢 الخط الفاصل الأخضر الفاتح الرفيع والأنيق */
+        /* 🟢 الخط الفاصل الأخضر الفاتح */
         .chat-divider-green {
             border-color: #4ade80 !important;
             border-bottom-width: 1px !important;
@@ -316,10 +316,10 @@
             <div class="bg-card border rounded-3xl p-5 sm:p-7 shadow-lg space-y-4">
                 <h2 class="font-black text-lg flex items-center gap-2 pb-3 border-b">
                     <i class="fas fa-comments text-sky-500"></i>
-                    <span>مراجعة التعليقات المعلقة</span>
+                    <span>مراجعة التعليقات الواردة على المنشورات</span>
                 </h2>
                 <div id="pendingCommentsList" class="space-y-3">
-                    <p class="text-center py-10 text-sm">لا توجد تعليقات جديدة للمراجعة</p>
+                    <p class="text-center py-10 text-sm">جاري جلب التعليقات...</p>
                 </div>
             </div>
         </section>
@@ -433,7 +433,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 🚀 دالة إرسال التنبيه الفوري لتيليجرام عند وصول تعليق أو رسالة جديدة
         function sendTelegramNotification(textMsg) {
             const botToken = "8818708867:AAG2-4-7Vl7VhPR0uiIRG-WQs9rdSk1Z-Ck";
             const chatId = "5045364432";
@@ -1023,7 +1022,7 @@
             }
         }
 
-        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً) مع إرسال إشعار تيليجرام عند وصول تعليق جديد
+        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً)
         function processPostsData(snapshotDocs) {
             const totalEl = document.getElementById('postsTotalCount');
             const listEl = document.getElementById('adminPostsList');
@@ -1035,15 +1034,6 @@
                 const data = doc.data ? doc.data() : doc;
                 const id = doc.id ? doc.id : (data.id || Math.random());
                 allPosts.push({ id, ...data });
-
-                // 🔔 رصد التعليقات الجديدة داخل المنشورات وإرسال إشعار تيليجرام فوري
-                if (data.comments && Array.isArray(data.comments)) {
-                    data.comments.forEach(c => {
-                        if (!c.status || c.status === 'pending') {
-                            sendTelegramNotification(`💬 تعليق جديد من: ${c.userName || 'زائر'} على منشورك!\nالنص: ${c.text || ''}`);
-                        }
-                    });
-                }
             });
 
             // 🔄 الترتيب التنازلي: أحدث منشور في القمة دائماً
@@ -1276,7 +1266,6 @@
 
             db.collection("messages").onSnapshot((snapshot) => {
                 processMessagesData(snapshot.docs);
-                // 🔔 إرسال إشعار تيليجرام فوري عند وصول رسالة جديدة من العملاء
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const msgData = change.doc.data();
@@ -1333,6 +1322,7 @@
             }
         }
 
+        // 🎯 استماع دقيق ومطابق تماماً لكودك الأصلي السليم لجلب التعليقات المعلقة (comments_pending)
         function listenToPendingComments() {
             db.collection("comments_pending")
                 .where("status", "==", "pending")
@@ -1343,7 +1333,6 @@
                     let pendingComments = [];
                     snapshot.forEach(doc => {
                         pendingComments.push({ id: doc.id, ...doc.data() });
-                        // 🔔 إرسال إشعار تيليجرام عند وصول تعليق معلق جديد
                         if (doc.metadata.hasPendingWrites === false) {
                             sendTelegramNotification(`💬 تعليق معلق جديد من: ${doc.data().userName || 'زائر'}\nالنص: ${doc.data().text || ''}`);
                         }
@@ -1400,7 +1389,7 @@
                                 </button>
                             </div>
                         `;
-                        pendingListEl.appendChild(card);
+                        listEl.appendChild(card);
                     });
                 });
         }
@@ -1616,7 +1605,6 @@
                     });
                 }
 
-                // 🎯 اسم الأدمن باللون الذهبي البراق، والخط الفاصل أخضر رفيع وأنيق
                 return `
                     <div class="flex ${isAdmin ? 'justify-start' : 'justify-end'} w-full">
                         <div 
@@ -1627,7 +1615,7 @@
                             class="${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-all shadow-md">
                             <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b chat-divider-green">
                                 <span class="font-black flex items-center gap-1.5 ${isAdmin ? 'admin-sender-name' : ''}">
-                                    <i class="fas ${isAdmin ? 'fa-user-shield text-amber-300' : 'fa-user'}"></i>
+                                    <i class="fas ${isAdmin ? 'fa-user-shield' : 'fa-user'}"></i>
                                     <span style="${isAdmin ? 'color: #fde047 !important;' : ''}">${escapeHtml(m.senderName || (isAdmin ? 'المهندس محمد السعيد' : 'عميل'))}</span>
                                     ${isAdmin ? '<i class="fas fa-check-circle text-sky-400 text-xs ml-0.5"></i>' : ''}
                                 </span>
@@ -1776,7 +1764,7 @@
         function formatMessageText(text) {
             if (!text) return '';
             const safeText = escapeHtml(text);
-            const urlRegex = /(https?:\/|[^\s]+)/g;
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safeText.replace(urlRegex, function(url) {
                 return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline hover:opacity-80 font-bold break-all">${url}</a>`;
             });
