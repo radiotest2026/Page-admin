@@ -20,7 +20,6 @@
         ::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
 
-        /* الحفاظ على المسافات والأسطر كما يكتبها المستخدم بالتمام */
         .whitespace-pre-wrap { white-space: pre-wrap; word-break: break-word; }
 
         textarea { resize: none !important; }
@@ -111,7 +110,7 @@
         .theme-light .chat-admin-bubble {
             background: linear-gradient(135deg, #1e40af, #2563eb) !important;
             color: #ffffff !important;
-            border: 1px solid #1d4ed8 !important;
+            border: 1px solid #1e40af !important;
         }
         .theme-light .chat-admin-bubble * {
             color: #ffffff !important;
@@ -125,13 +124,22 @@
             color: #0f172a !important;
         }
         
+        /* 🟢 زر وحانة الرسائل باللون الأخضر المريح */
+        .custom-green-tab {
+            background-color: #059669 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+        }
+        .custom-green-tab:hover {
+            background-color: #047857 !important;
+        }
+
         /* 🟡 اللون الذهبي البراق لاسم المهندس محمد السعيد */
         .admin-sender-name, .admin-sender-name span {
             color: #fde047 !important;
             font-weight: 900 !important;
         }
 
-        /* كبسولة توقيت رد الأدمن */
         .admin-msg-time {
             color: #f8fafc !important;
             background-color: rgba(255, 255, 255, 0.2);
@@ -147,11 +155,15 @@
         }
     </style>
 </head>
-<body class="theme-dark min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+<body class="theme-dark min-h-screen flex flex-col justify-between selection:bg-emerald-600 selection:text-white">
 
     <div id="msgActionModal" onclick="closeMsgActionModal()" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-[1002] hidden flex items-center justify-center p-4">
         <div class="bg-card border rounded-2xl p-4 max-w-xs w-full shadow-2xl space-y-2.5" onclick="event.stopPropagation()">
             <h3 class="text-xs font-black text-slate-400 pb-2 border-b text-center">خيارات الرسالة</h3>
+            <button onclick="triggerReplyActiveMessage()" class="w-full py-2.5 px-3 bg-emerald-600/15 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2">
+                <i class="fas fa-reply text-xs"></i>
+                <span>رد على هذه الرسالة</span>
+            </button>
             <button onclick="triggerEditActiveMessage()" class="w-full py-2.5 px-3 bg-blue-600/15 hover:bg-blue-600 text-blue-400 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2">
                 <i class="fas fa-pen text-xs"></i>
                 <span>تعديل نص الرسالة</span>
@@ -168,7 +180,7 @@
 
     <div id="imageModal" onclick="closeImagePreview()" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[1001] hidden flex items-center justify-center p-4 cursor-pointer transition-all duration-300">
         <div class="relative max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onclick="event.stopPropagation()">
-            <img id="modalPreviewImg" src="" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-blue-500/30">
+            <img id="modalPreviewImg" src="" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-emerald-500/30">
             <button onclick="closeImagePreview()" class="absolute -top-3 -right-3 bg-slate-800 hover:bg-slate-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition border border-slate-600">
                 <i class="fas fa-times text-sm"></i>
             </button>
@@ -177,7 +189,7 @@
 
     <div id="authScreen" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-[999] flex items-center justify-center p-4">
         <div class="bg-card border rounded-3xl p-8 max-w-md w-full text-center shadow-2xl space-y-5">
-            <div class="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center text-2xl mx-auto">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl mx-auto">
                 <i class="fas fa-lock"></i>
             </div>
             <div>
@@ -185,8 +197,8 @@
                 <p class="text-xs text-slate-400 mt-1">يرجى كتابة رمز المرور الخاص بالمهندس محمد السعيد للمتابعة</p>
             </div>
             <input type="password" id="pinInput" placeholder="••••" maxlength="6" autofocus
-                class="w-full input-field border-2 rounded-2xl p-4 text-center text-2xl tracking-widest outline-none transition num-en focus:border-blue-500">
-            <button onclick="checkPin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/30 transition duration-200">
+                class="w-full input-field border-2 rounded-2xl p-4 text-center text-2xl tracking-widest outline-none transition num-en focus:border-emerald-500">
+            <button onclick="checkPin()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-emerald-600/30 transition duration-200">
                 تأكيد الدخول
             </button>
         </div>
@@ -194,11 +206,11 @@
 
     <header id="mainHeader" class="bg-card border-b sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-white text-xl shadow-md">
                 <i class="fas fa-satellite-dish text-white"></i>
             </div>
             <div>
-                <h1 class="text-base sm:text-lg font-black bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">
+                <h1 class="text-base sm:text-lg font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
                     لوحة تحكم المنصة الرسمية
                 </h1>
                 <p class="text-xs text-slate-400">المهندس محمد السعيد • شركة ستار نت</p>
@@ -219,9 +231,9 @@
 
     <main id="mainContainer" class="max-w-5xl w-full mx-auto p-4 sm:p-6 flex-1 space-y-6">
         <div id="tabsContainer" class="flex flex-wrap gap-2.5 bg-card p-2 rounded-2xl border">
-            <button onclick="switchTab('tab-posts')" id="btn-tab-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-md">
-                <i class="fas fa-pen-nib text-white"></i>
-                <span class="text-white font-black">نشر رسمي</span>
+            <button onclick="switchTab('tab-posts')" id="btn-tab-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border">
+                <i class="fas fa-pen-nib text-emerald-400"></i>
+                <span class="font-black">نشر رسمي</span>
             </button>
             <button onclick="switchTab('tab-pending-posts')" id="btn-tab-pending-posts" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative">
                 <i class="fas fa-clock text-amber-400"></i>
@@ -229,7 +241,7 @@
                 <span id="pendingPostsBadge" class="hidden bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-bounce">0</span>
             </button>
             <button onclick="switchTab('tab-manage')" id="btn-tab-manage" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border">
-                <i class="fas fa-layer-group text-blue-400"></i>
+                <i class="fas fa-layer-group text-emerald-400"></i>
                 <span>المنشورات (<span id="postsTotalCount" class="num-en">0</span>)</span>
             </button>
             <button onclick="switchTab('tab-comments')" id="btn-tab-comments" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative">
@@ -237,10 +249,11 @@
                 <span>التعليقات</span>
                 <span id="pendingCommentsBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
-            <button onclick="switchTab('tab-messages')" id="btn-tab-messages" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative">
-                <i class="fas fa-envelope text-indigo-400"></i>
-                <span>الرسائل</span>
-                <span id="unreadMessagesBadge" class="hidden bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
+            <!-- 🟢 زر الرسائل باللون الأخضر والعداد باللون البرتقالي/الأصفر المريح -->
+            <button onclick="switchTab('tab-messages')" id="btn-tab-messages" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition custom-green-tab relative shadow-md">
+                <i class="fas fa-envelope text-white"></i>
+                <span class="text-white font-black">الرسائل</span>
+                <span id="unreadMessagesBadge" class="hidden bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full num-en animate-pulse">0</span>
             </button>
             <button onclick="switchTab('tab-banned')" id="btn-tab-banned" class="tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative">
                 <i class="fas fa-ban text-red-400"></i>
@@ -252,7 +265,7 @@
             <div class="bg-card border rounded-3xl p-5 sm:p-7 shadow-lg space-y-4">
                 <div class="flex justify-between items-center pb-3 border-b">
                     <h2 id="formHeaderTitle" class="font-black text-lg flex items-center gap-2">
-                        <i class="fas fa-edit text-blue-500"></i>
+                        <i class="fas fa-edit text-emerald-500"></i>
                         <span>كتابة منشور جديد رسمي من المهندس محمد السعيد</span>
                     </h2>
                 </div>
@@ -261,16 +274,16 @@
                     <div>
                         <label class="block text-xs font-bold mb-2">نص المنشور:</label>
                         <textarea id="postTextInput" rows="4" placeholder="اكتب ما يدور في خاطرك..." required
-                            class="w-full input-field border rounded-2xl p-4 text-sm sm:text-base focus:border-blue-500 focus:outline-none transition resize-none"></textarea>
+                            class="w-full input-field border rounded-2xl p-4 text-sm sm:text-base focus:border-emerald-500 focus:outline-none transition resize-none"></textarea>
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-xs font-bold">الصور المرفقة (حتى 10 صور):</label>
-                            <span id="imagesCountBadge" class="text-xs font-bold text-blue-500 num-en">0 / 10 صور</span>
+                            <span id="imagesCountBadge" class="text-xs font-bold text-emerald-500 num-en">0 / 10 صور</span>
                         </div>
                         <div onclick="document.getElementById('postFilesInput').click()" 
-                            class="border-2 border-dashed bg-box rounded-2xl p-6 text-center cursor-pointer transition group hover:border-blue-500">
-                            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                            class="border-2 border-dashed bg-box rounded-2xl p-6 text-center cursor-pointer transition group hover:border-emerald-500">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
                             <p class="text-sm font-bold">اضغط لاختيار الصور</p>
@@ -279,7 +292,7 @@
                         <div id="imagePreviewContainer" class="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-4 hidden"></div>
                     </div>
                     <div class="flex gap-3 pt-2">
-                        <button type="submit" id="submitPostBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
+                        <button type="submit" id="submitPostBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
                             <i class="fas fa-paperplane text-white"></i>
                             <span id="submitBtnText" class="text-white font-black">نشر المنشور على الصفحة سحابياً</span>
                         </button>
@@ -306,7 +319,7 @@
         <section id="sec-manage" class="hidden space-y-4">
             <div class="bg-card border rounded-3xl p-5 sm:p-7 shadow-lg space-y-4">
                 <h2 class="font-black text-lg flex items-center gap-2 pb-3 border-b">
-                    <i class="fas fa-layer-group text-blue-500"></i>
+                    <i class="fas fa-layer-group text-emerald-500"></i>
                     <span>المنشورات المعتمدة المنشورة على الصفحة</span>
                 </h2>
                 <div id="adminPostsList" class="space-y-3">
@@ -331,7 +344,7 @@
             <div class="bg-card border rounded-3xl p-4 sm:p-6 shadow-lg space-y-4">
                 <div class="flex justify-between items-center pb-2 border-b">
                     <h2 class="font-black text-base sm:text-lg flex items-center gap-2">
-                        <i class="fas fa-comments text-indigo-500"></i>
+                        <i class="fas fa-comments text-emerald-500"></i>
                         <span>صندوق محادثات ورسائل العملاء</span>
                     </h2>
                     <span class="text-xs font-bold">اضغط على أي محادثة لفتحها كاملة</span>
@@ -372,9 +385,9 @@
         
         <header class="p-3 sm:p-4 border-b flex justify-between items-center shrink-0 shadow-md">
             <div class="flex items-center gap-3">
-                <button onclick="backToConversationsList()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center gap-2 shadow-sm">
+                <button onclick="backToConversationsList()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center gap-2 shadow-sm">
                     <i class="fas fa-arrow-right text-white"></i>
-                    <span class="text-white">الرسايل</span>
+                    <span class="text-white font-bold">الرسايل</span>
                 </button>
                 <div id="activeChatTitle" class="text-sm sm:text-base font-black"></div>
             </div>
@@ -386,29 +399,39 @@
         </div>
 
         <footer class="p-3 sm:p-4 border-t flex flex-col gap-2 shrink-0 shadow-lg">
+            <!-- 💬 صندوق الرد المخصص (Reply Preview Box) -->
+            <div id="replyPreviewBox" class="hidden flex justify-between items-center bg-box border border-emerald-500/40 px-3.5 py-2 rounded-xl text-xs font-bold">
+                <div class="flex items-center gap-2 truncate">
+                    <i class="fas fa-reply text-emerald-400"></i>
+                    <span class="text-emerald-400 font-black">الرد على:</span>
+                    <span id="replyPreviewText" class="truncate opacity-90"></span>
+                </div>
+                <button onclick="cancelReplyMessage()" class="text-red-400 hover:text-red-500 text-sm p-1"><i class="fas fa-times"></i></button>
+            </div>
+
             <div id="chatMediaPreview" class="hidden"></div>
-            <div id="editModeNotice" class="hidden flex justify-between items-center bg-blue-500/15 border border-blue-500/40 px-3 py-1.5 rounded-xl text-xs text-blue-500 font-bold">
+            <div id="editModeNotice" class="hidden flex justify-between items-center bg-emerald-500/15 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs text-emerald-500 font-bold">
                 <span class="flex items-center gap-1.5"><i class="fas fa-pen"></i> جاري تعديل الرسالة الآن...</span>
                 <button onclick="cancelMessageEdit()" class="text-red-500 hover:underline">إلغاء التعديل</button>
             </div>
             <div class="flex items-center gap-2 w-full max-w-4xl mx-auto items-end">
                 <button type="button" onclick="document.getElementById('chatFileInput').click()" title="إرفاق ملف"
-                    class="w-11 h-11 rounded-2xl bg-box border flex items-center justify-center transition shrink-0 hover:border-blue-500">
+                    class="w-11 h-11 rounded-2xl bg-box border flex items-center justify-center transition shrink-0 hover:border-emerald-500">
                     <i class="fas fa-paperclip text-sm sm:text-base"></i>
                 </button>
                 <input type="file" id="chatFileInput" class="hidden" accept="audio/*,image/*,video/*" onchange="handleChatMediaFile(event)">
 
                 <button type="button" id="chatRecBtn" onclick="toggleChatAudioRecording()" title="تسجيل صوتي"
-                    class="w-11 h-11 rounded-2xl bg-box border flex items-center justify-center transition shrink-0 hover:border-blue-500">
+                    class="w-11 h-11 rounded-2xl bg-box border flex items-center justify-center transition shrink-0 hover:border-emerald-500">
                     <i class="fas fa-microphone text-sm sm:text-base"></i>
                 </button>
                 <span id="chatRecTimer" class="hidden text-xs text-rose-500 font-bold num-en animate-pulse shrink-0">00:00</span>
 
-                <textarea id="adminReplyTextInput" placeholder="اكتب ردك هنا..." rows="1"
+                <textarea id="adminReplyTextInput" placeholder="اكتب ردك هنا (يدعم Enter للسطور الجديدة)..." rows="1"
                     oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
-                    class="min-w-0 flex-1 input-field border rounded-2xl px-4 py-3 text-sm sm:text-base focus:border-blue-500 outline-none transition font-medium resize-none max-h-36 overflow-y-auto"></textarea>
+                    class="min-w-0 flex-1 input-field border rounded-2xl px-4 py-3 text-sm sm:text-base focus:border-emerald-500 outline-none transition font-medium resize-none max-h-36 overflow-y-auto"></textarea>
                 
-                <button onclick="sendAdminReply()" id="sendMsgBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 sm:px-7 py-3 rounded-2xl text-sm sm:text-base transition flex items-center justify-center gap-1.5 shadow-md">
+                <button onclick="sendAdminReply()" id="sendMsgBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-black px-5 sm:px-7 py-3 rounded-2xl text-sm sm:text-base transition flex items-center justify-center gap-1.5 shadow-md">
                     <i class="fas fa-paperplane text-xs sm:text-sm text-white" id="sendBtnIcon"></i>
                     <span id="sendBtnLabel" class="text-white font-black">إرسال</span>
                 </button>
@@ -416,7 +439,7 @@
         </footer>
     </div>
 
-    <div id="toastBox" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-blue-500/50 text-white font-bold px-6 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-24 opacity-0 z-[1000] text-sm"></div>
+    <div id="toastBox" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-emerald-500/50 text-white font-bold px-6 py-3 rounded-2xl shadow-2xl transition-all duration-300 transform translate-y-24 opacity-0 z-[1000] text-sm"></div>
 
     <footer id="mainFooter" class="text-center py-4 border-t text-xs text-slate-400">
         لوحة التحكم السحابية &copy; 2026 • خاصة بالمهندس محمد السعيد
@@ -590,12 +613,18 @@
 
             const tabBtns = document.querySelectorAll('.tab-btn');
             tabBtns.forEach(btn => {
-                btn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative";
+                if (!btn.classList.contains('custom-green-tab')) {
+                    btn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-box border relative";
+                }
             });
 
             const activeBtn = document.getElementById(`btn-${tabId}`);
             if (activeBtn) {
-                activeBtn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-blue-600 text-white shadow-md relative";
+                if (tabId === 'tab-messages') {
+                    activeBtn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition custom-green-tab relative shadow-md";
+                } else {
+                    activeBtn.className = "tab-btn flex-1 min-w-[120px] py-3 px-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-emerald-600 text-white shadow-md relative";
+                }
             }
 
             if (tabId === 'tab-posts') document.getElementById('sec-posts').classList.remove('hidden');
@@ -820,7 +849,7 @@
             } else if (media.type === 'audio') {
                 content = `
                     <div class="flex items-center gap-3 bg-card p-2.5 rounded-xl border w-full max-w-md">
-                        <i class="fas fa-volume-high text-blue-400 text-lg"></i>
+                        <i class="fas fa-volume-high text-emerald-400 text-lg"></i>
                         <audio controls class="w-full h-8"><source src="${media.url}" type="audio/mpeg"></audio>
                     </div>`;
             } else if (media.type === 'video') {
@@ -828,7 +857,7 @@
             }
 
             container.innerHTML = `
-                <div class="flex items-center gap-3 bg-box p-3 rounded-2xl border border-blue-500/30 w-fit">
+                <div class="flex items-center gap-3 bg-box p-3 rounded-2xl border border-emerald-500/30 w-fit">
                     ${content}
                     <button type="button" onclick="clearAdminMedia('${postId}')" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white w-7 h-7 rounded-lg flex items-center justify-center transition text-xs">
                         <i class="fas fa-times"></i>
@@ -953,7 +982,7 @@
             } else if (currentChatMedia.type === 'audio') {
                 content = `
                     <div class="flex items-center gap-2 bg-box p-1.5 rounded-xl border">
-                        <i class="fas fa-volume-high text-blue-400 text-xs"></i>
+                        <i class="fas fa-volume-high text-emerald-400 text-xs"></i>
                         <audio controls class="h-7 max-w-[180px]"><source src="${currentChatMedia.url}" type="audio/mpeg"></audio>
                     </div>`;
             } else if (currentChatMedia.type === 'video') {
@@ -961,7 +990,7 @@
             }
 
             container.innerHTML = `
-                <div class="flex items-center gap-2 bg-card p-1.5 rounded-xl border border-blue-500/40 w-fit">
+                <div class="flex items-center gap-2 bg-card p-1.5 rounded-xl border border-emerald-500/40 w-fit">
                     ${content}
                     <button type="button" onclick="clearChatMedia()" class="bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white w-6 h-6 rounded-lg flex items-center justify-center transition text-xs">
                         <i class="fas fa-times"></i>
@@ -1110,20 +1139,20 @@
                             ${imagesHtml}
 
                             <div class="pt-3 border-t space-y-3">
-                                <label class="block text-xs font-bold text-blue-500">
+                                <label class="block text-xs font-bold text-emerald-500">
                                     <i class="fas fa-reply"></i> رد وحل المهندس محمد السعيد:
                                 </label>
                                 
                                 <div class="flex gap-2">
-                                    <textarea id="adminSolutionInput_${data.id}" placeholder="اكتب الحل المعتمد للعميل هنا (يدعم Enter للسطور الجديدة)..." rows="2"
+                                    <textarea id="adminSolutionInput_${data.id}" placeholder="اكتب الحل المعتمد هنا (يدعم Enter للسطور الجديدة)..." rows="2"
                                         oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
-                                        class="flex-1 input-field border rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:border-blue-500 focus:outline-none transition resize-none"></textarea>
+                                        class="flex-1 input-field border rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:border-emerald-500 focus:outline-none transition resize-none"></textarea>
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button type="button" onclick="document.getElementById('adminFileInput_${data.id}').click()" 
                                         class="px-3 py-2 bg-card hover:bg-box border rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
-                                        <i class="fas fa-paperclip text-blue-500"></i>
+                                        <i class="fas fa-paperclip text-emerald-500"></i>
                                         <span>إرفاق ملف</span>
                                     </button>
                                     <input type="file" id="adminFileInput_${data.id}" class="hidden" accept="audio/*,image/*,video/*" onchange="handleAdminMediaFile('${data.id}', event)">
@@ -1231,7 +1260,7 @@
                 if (isUnread) {
                     containerClasses += 'bg-emerald-500/15 border-emerald-500/40 shadow-sm hover:border-emerald-400';
                 } else {
-                    containerClasses += 'bg-card border hover:border-blue-500/50';
+                    containerClasses += 'bg-card border hover:border-emerald-500/50';
                 }
                 item.className = containerClasses;
 
@@ -1240,8 +1269,8 @@
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2">
                             ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>' : ''}
-                            <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-blue-500'}">
-                                <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-blue-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
+                            <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
+                                <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                             </span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -1326,7 +1355,6 @@
             }
         }
 
-        // 🎯 الاستماع المزدوج (التعليقات المعلقة في جدول مستقل + تعليقات المنشورات المباشرة)
         function listenToPendingComments() {
             db.collection("comments_pending")
                 .onSnapshot((snapshot1) => {
@@ -1336,7 +1364,6 @@
                         
                         let combinedComments = [];
 
-                        // 1. التعليقات من جدول comments_pending
                         snapshot1.forEach(doc => {
                             const data = doc.data();
                             if (!data.status || data.status === 'pending') {
@@ -1344,7 +1371,6 @@
                             }
                         });
 
-                        // 2. التعليقات الداخلية داخل كل منشور (post.comments)
                         snapshot2.forEach(postDoc => {
                             const postData = postDoc.data();
                             if (postData.comments && Array.isArray(postData.comments)) {
@@ -1410,7 +1436,7 @@
                                     <textarea id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (يدعم Enter للسطور الجديدة)..." rows="1"
                                         oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
                                         class="flex-1 input-field border rounded-xl px-3 py-2 text-xs resize-none">${escapeHtml(data.replyText || '')}</textarea>
-                                    <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId || ''}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-500 transition shrink-0">
+                                    <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId || ''}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shrink-0">
                                         حفظ ونشر
                                     </button>
                                 </div>
@@ -1519,6 +1545,7 @@
         let editingMessageIndex = null;
         let selectedMessageIndexForAction = null;
         let pressTimer = null;
+        let activeReplyingMessage = null;
 
         function openCustomerChat(visitorDocId) {
             activeChatVisitorId = visitorDocId;
@@ -1528,6 +1555,7 @@
             history.pushState({ chatOpen: true }, "");
 
             cancelMessageEdit();
+            cancelReplyMessage();
             db.collection("messages").doc(visitorDocId).update({ isReadByAdmin: true }).catch(() => {});
             renderActiveChatMessages();
         }
@@ -1538,14 +1566,14 @@
             document.body.style.overflow = '';
             clearChatMedia();
             cancelMessageEdit();
+            cancelReplyMessage();
         }
 
         function handleMsgTouchStart(index, isSenderAdmin) {
-            if (!isSenderAdmin) return;
             pressTimer = setTimeout(() => {
                 selectedMessageIndexForAction = index;
                 document.getElementById('msgActionModal').classList.remove('hidden');
-            }, 2000);
+            }, 600);
         }
 
         function handleMsgTouchEnd() {
@@ -1555,6 +1583,35 @@
         function closeMsgActionModal() {
             document.getElementById('msgActionModal').classList.add('hidden');
             selectedMessageIndexForAction = null;
+        }
+
+        function triggerReplyActiveMessage() {
+            const chat = allConversations.find(c => c.id === activeChatVisitorId);
+            if (!chat || selectedMessageIndexForAction === null) return;
+
+            const msg = (chat.messages || [])[selectedMessageIndexForAction];
+            if (!msg) return;
+
+            activeReplyingMessage = {
+                senderName: msg.senderName || (msg.sender === 'admin' ? 'المهندس محمد السعيد' : (chat.visitorName || 'عميل')),
+                text: msg.text || '[مرفق]'
+            };
+
+            const previewBox = document.getElementById('replyPreviewBox');
+            const previewText = document.getElementById('replyPreviewText');
+            if (previewBox && previewText) {
+                previewText.innerText = `${activeReplyingMessage.senderName}: ${activeReplyingMessage.text}`;
+                previewBox.classList.remove('hidden');
+            }
+
+            closeMsgActionModal();
+            document.getElementById('adminReplyTextInput').focus();
+        }
+
+        function cancelReplyMessage() {
+            activeReplyingMessage = null;
+            const previewBox = document.getElementById('replyPreviewBox');
+            if (previewBox) previewBox.classList.add('hidden');
         }
 
         function triggerEditActiveMessage() {
@@ -1631,6 +1688,16 @@
                 const msgTime = formatDateCompact(m.time);
                 const isAdmin = m.sender === 'admin';
 
+                let replyQuoteHtml = '';
+                if (m.replyTo) {
+                    replyQuoteHtml = `
+                        <div class="bg-black/20 border-r-2 border-emerald-400 px-3 py-1.5 rounded-lg mb-2 text-xs space-y-0.5 opacity-90">
+                            <span class="font-bold text-emerald-300 block">${escapeHtml(m.replyTo.senderName)}</span>
+                            <span class="truncate block opacity-80">${escapeHtml(m.replyTo.text)}</span>
+                        </div>
+                    `;
+                }
+
                 if (m.media) {
                     if (typeof m.media === 'object' && m.media.url) {
                         if (m.media.type === 'image') detectedImages.push(m.media.url);
@@ -1700,6 +1767,7 @@
                                 </span>
                                 <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : 'opacity-75'}">${msgTime}</span>
                             </div>
+                            ${replyQuoteHtml}
                             ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base whitespace-pre-wrap ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
@@ -1769,6 +1837,7 @@
                 senderName: 'المهندس محمد السعيد',
                 text: text,
                 media: media || null,
+                replyTo: activeReplyingMessage || null,
                 time: new Date().toISOString()
             };
 
@@ -1783,6 +1852,7 @@
                 input.value = '';
                 input.style.height = 'auto';
                 clearChatMedia();
+                cancelReplyMessage();
                 showToast("تم إرسال الرد بنجاح!");
             } catch (err) {
                 console.error(err);
@@ -1845,7 +1915,7 @@
             const safeText = escapeHtml(text);
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return safeText.replace(urlRegex, function(url) {
-                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline hover:opacity-80 font-bold break-all">${url}</a>`;
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 underline hover:opacity-80 font-bold break-all">${url}</a>`;
             });
         }
     </script>
