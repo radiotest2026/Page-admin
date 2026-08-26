@@ -20,6 +20,9 @@
         ::-webkit-scrollbar-thumb { background: #64748b; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
 
+        /* الحفاظ على المسافات والأسطر كما يكتبها المستخدم بالتمام */
+        .whitespace-pre-wrap { white-space: pre-wrap; word-break: break-word; }
+
         textarea { resize: none !important; }
         textarea::-webkit-resizer { display: none !important; }
 
@@ -100,7 +103,7 @@
         #singleChatView.chat-theme-light footer * {
             color: #0f172a !important;
         }
-        #singleChatView.chat-theme-light input {
+        #singleChatView.chat-theme-light input, #singleChatView.chat-theme-light textarea {
             background-color: #ffffff !important;
             color: #0f172a !important;
             border-color: #cbd5e1 !important;
@@ -1102,7 +1105,7 @@
                             
                             <div class="bg-card p-3.5 rounded-xl border">
                                 <div class="text-xs font-bold mb-1">تفاصيل المشكلة:</div>
-                                <p class="text-sm leading-relaxed">${formatMessageText(data.text || '')}</p>
+                                <p class="text-sm leading-relaxed whitespace-pre-wrap">${formatMessageText(data.text || '')}</p>
                             </div>
                             ${imagesHtml}
 
@@ -1112,8 +1115,9 @@
                                 </label>
                                 
                                 <div class="flex gap-2">
-                                    <input type="text" id="adminSolutionInput_${data.id}" placeholder="اكتب الحل المعتمد للعميل هنا..." 
-                                        class="flex-1 input-field border rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:border-blue-500 focus:outline-none transition">
+                                    <textarea id="adminSolutionInput_${data.id}" placeholder="اكتب الحل المعتمد للعميل هنا (يدعم Enter للسطور الجديدة)..." rows="2"
+                                        oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+                                        class="flex-1 input-field border rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:border-blue-500 focus:outline-none transition resize-none"></textarea>
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2">
@@ -1173,7 +1177,7 @@
                                     <span class="text-[10px]">• جهاز: ${escapeHtml(data.deviceType || 'غير محدد')}</span>
                                     <span class="text-[10px]">• ${formattedTime}</span>
                                 </div>
-                                <p class="text-sm line-clamp-1">${formatMessageText(data.text || '')}</p>
+                                <p class="text-sm line-clamp-1 whitespace-pre-wrap">${formatMessageText(data.text || '')}</p>
                                 ${data.adminSolutionComment || data.adminSolutionMedia ? `
                                     <div class="flex items-center text-xs text-emerald-500 line-clamp-1">
                                         <span>✅ ردك: ${formatMessageText(data.adminSolutionComment || '')}</span>
@@ -1322,38 +1326,37 @@
             }
         }
 
-        // 🎯 الاستماع المزدوج (التعليقات المعلقة في جدول مستقل + تعليقات المنشورات المباشرة) لضمان ظهورها 100%
+        // 🎯 الاستماع المزدوج (التعليقات المعلقة في جدول مستقل + تعليقات المنشورات المباشرة)
         function listenToPendingComments() {
-            // 1. الاستماع لجدول comments_pending
             db.collection("comments_pending")
                 .onSnapshot((snapshot1) => {
-                    // 2. الاستماع لجدول posts لجلب أي تعليقات داخلية
                     db.collection("posts").onSnapshot((snapshot2) => {
                         const listEl = document.getElementById('pendingCommentsList');
                         const badge = document.getElementById('pendingCommentsBadge');
                         
-                        let allPendingComments = [];
+                        let combinedComments = [];
 
-                        // جمع التعليقات من جدول comments_pending
+                        // 1. التعليقات من جدول comments_pending
                         snapshot1.forEach(doc => {
                             const data = doc.data();
                             if (!data.status || data.status === 'pending') {
-                                allPendingComments.push({ id: doc.id, ...data });
+                                combinedComments.push({ id: doc.id, ...data });
                             }
                         });
 
-                        // جمع التعليقات من مصفوفات المنشورات (posts -> comments)
+                        // 2. التعليقات الداخلية داخل كل منشور (post.comments)
                         snapshot2.forEach(postDoc => {
                             const postData = postDoc.data();
                             if (postData.comments && Array.isArray(postData.comments)) {
                                 postData.comments.forEach((c, idx) => {
                                     if (!c.status || c.status === 'pending') {
-                                        allPendingComments.push({
-                                            id: postDoc.id + '_comment_' + idx,
+                                        combinedComments.push({
+                                            id: postDoc.id + '_sub_' + idx,
                                             postId: postDoc.id,
                                             userName: c.userName || 'زائر',
                                             text: c.text || '',
-                                            createdAt: c.createdAt || postData.createdAt
+                                            createdAt: c.createdAt || postData.createdAt,
+                                            replyText: c.replyText || ''
                                         });
                                     }
                                 });
@@ -1361,22 +1364,22 @@
                         });
 
                         if (badge) {
-                            if (allPendingComments.length > 0) {
+                            if (combinedComments.length > 0) {
                                 badge.classList.remove('hidden');
-                                badge.innerText = allPendingComments.length;
+                                badge.innerText = combinedComments.length;
                             } else {
                                 badge.classList.add('hidden');
                             }
                         }
 
                         if (!listEl) return;
-                        if (allPendingComments.length === 0) {
+                        if (combinedComments.length === 0) {
                             listEl.innerHTML = '<p class="text-center py-10 text-sm">لا توجد أي تعليقات جديدة للمراجعة ✅</p>';
                             return;
                         }
 
                         listEl.innerHTML = '';
-                        allPendingComments.forEach(data => {
+                        combinedComments.forEach(data => {
                             const devId = data.visitorId || data.deviceId || data.userName;
                             const formattedTime = formatDateCompact(data.createdAt);
                             const card = document.createElement('div');
@@ -1402,12 +1405,13 @@
                                         </button>
                                     </div>
                                 </div>
-                                <p class="text-xs sm:text-sm bg-card p-2.5 rounded-xl mt-2 leading-relaxed border">${formatMessageText(data.text || '')}</p>
+                                <p class="text-xs sm:text-sm bg-card p-2.5 rounded-xl mt-2 leading-relaxed whitespace-pre-wrap border">${formatMessageText(data.text || '')}</p>
                                 <div class="pt-2 flex gap-2">
-                                    <input type="text" id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (اختياري)..." value="${escapeHtml(data.replyText || '')}"
-                                        class="flex-1 input-field border rounded-xl px-3 py-1.5 text-xs">
-                                    <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId || ''}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-500 transition">
-                                        حفظ الرد ونشر
+                                    <textarea id="adminReplyInput_${data.id}" placeholder="اكتب ردك الرسمي (يدعم Enter للسطور الجديدة)..." rows="1"
+                                        oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+                                        class="flex-1 input-field border rounded-xl px-3 py-2 text-xs resize-none">${escapeHtml(data.replyText || '')}</textarea>
+                                    <button onclick="saveAdminReplyToComment('${data.id}', '${data.postId || ''}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-500 transition shrink-0">
+                                        حفظ ونشر
                                     </button>
                                 </div>
                             `;
@@ -1419,15 +1423,14 @@
 
         async function approveComment(commentId, postId) {
             try {
-                if (commentId.includes('_comment_')) {
-                    // إذا كان التعليق داخل مصفوفة المنشور
+                if (commentId.includes('_sub_')) {
                     const realPostId = postId;
                     const postRef = db.collection("posts").doc(realPostId);
                     const docSnap = await postRef.get();
                     if (docSnap.exists) {
                         let postData = docSnap.data();
                         let comments = postData.comments || [];
-                        const index = parseInt(commentId.split('_comment_')[1]);
+                        const index = parseInt(commentId.split('_sub_')[1]);
                         if (comments[index]) {
                             comments[index].status = 'approved';
                             await postRef.update({ 
@@ -1437,7 +1440,6 @@
                         }
                     }
                 } else {
-                    // إذا كان في جدول comments_pending
                     await db.collection("comments_pending").doc(commentId).update({
                         status: 'approved',
                         approvedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1457,13 +1459,13 @@
         async function saveAdminReplyToComment(commentId, postId) {
             const text = document.getElementById(`adminReplyInput_${commentId}`).value.trim();
             try {
-                if (commentId.includes('_comment_')) {
+                if (commentId.includes('_sub_')) {
                     const postRef = db.collection("posts").doc(postId);
                     const docSnap = await postRef.get();
                     if (docSnap.exists) {
                         let postData = docSnap.data();
                         let comments = postData.comments || [];
-                        const index = parseInt(commentId.split('_comment_')[1]);
+                        const index = parseInt(commentId.split('_sub_')[1]);
                         if (comments[index]) {
                             comments[index].replyText = text;
                             comments[index].status = 'approved';
@@ -1494,13 +1496,13 @@
         async function deleteComment(commentId, postId) {
             if (confirm("هل تريد رفض وحذف هذا التعليق نهائياً؟")) {
                 try {
-                    if (commentId.includes('_comment_')) {
+                    if (commentId.includes('_sub_')) {
                         const postRef = db.collection("posts").doc(postId);
                         const docSnap = await postRef.get();
                         if (docSnap.exists) {
                             let postData = docSnap.data();
                             let comments = postData.comments || [];
-                            const index = parseInt(commentId.split('_comment_')[1]);
+                            const index = parseInt(commentId.split('_sub_')[1]);
                             comments.splice(index, 1);
                             await postRef.update({ comments: comments });
                         }
@@ -1698,7 +1700,7 @@
                                 </span>
                                 <span class="font-mono text-[11px] ${isAdmin ? 'admin-msg-time' : 'opacity-75'}">${msgTime}</span>
                             </div>
-                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
+                            ${rawText ? `<div class="leading-relaxed break-words font-medium pt-1 text-sm sm:text-base whitespace-pre-wrap ${isAdmin ? 'text-white' : ''}">${formatMessageText(rawText)}</div>` : ''}
                             ${mediaHtml}
                         </div>
                     </div>
