@@ -1119,7 +1119,7 @@
                                             <span class="text-[10px] bg-card border px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                                                 <i class="far fa-clock text-amber-400"></i> ${formattedTime}
                                             </span>
-                                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
+                                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -1224,7 +1224,7 @@
             }
         }
 
-        // 🚀 معالجة صندوق الرسائل مع جلب محتوى الرسائل الصحيح تماماً
+        // 🚀 معالجة صندوق الرسائل مع دعم قراءة الرد المقتبس (replyTo أو quotedReply)
         function processMessagesData(snapshotDocs) {
             allConversations = [];
             const usersList = document.getElementById('inboxUsersList');
@@ -1274,7 +1274,7 @@
                             <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
                                 <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                             </span>
-                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
+                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2">
                             ${isUnread ? '<span class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full">رسالة جديدة</span>' : ''}
@@ -1602,7 +1602,7 @@
             }
         }
 
-        // 🎯 عرض الرسائل بدقة تامة ودعم ميزة السحب للرد (Swipe to Reply)
+        // 🎯 عرض الرسائل بدعم كامل لقراءة أي صيغة رد مقتبس (replyTo أو quotedReply) في لوحة التحكم
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
@@ -1631,12 +1631,16 @@
                 const msgTime = formatDateCompact(m.time);
                 const isAdmin = m.sender === 'admin';
 
+                // 💬 دعم قراءة الصيغتين معاً (replyTo أو quotedReply) لضمان ظهور الرد دائماً في اللوحة
+                let replyData = m.replyTo || m.quotedReply;
                 let replyQuoteHtml = '';
-                if (m.replyTo) {
+                if (replyData) {
+                    const rName = replyData.senderName || replyData.replyToName || 'الإدارة';
+                    const rText = replyData.text || replyData.replyToText || '';
                     replyQuoteHtml = `
                         <div class="bg-black/20 border-r-2 border-emerald-400 px-3 py-1.5 rounded-lg mb-2 text-xs space-y-0.5 opacity-90">
-                            <span class="font-bold text-emerald-300 block">${escapeHtml(m.replyTo.senderName)}</span>
-                            <span class="truncate block opacity-80">${escapeHtml(m.replyTo.text)}</span>
+                            <span class="font-bold text-emerald-300 block">${escapeHtml(rName)}</span>
+                            <span class="truncate block opacity-80">${escapeHtml(rText)}</span>
                         </div>
                     `;
                 }
@@ -1807,12 +1811,14 @@
                 else if (media.type === 'video') summaryText = '🎥 [مقطع فيديو]';
             }
 
+            // إرسال الرد مع دعم التوافقية الكاملة (replyTo و quotedReply)
             const replyData = {
                 sender: 'admin',
                 senderName: 'المهندس محمد السعيد',
                 text: text,
                 media: media || null,
                 replyTo: activeReplyingMessage || null,
+                quotedReply: activeReplyingMessage ? { replyToName: activeReplyingMessage.senderName, replyToText: activeReplyingMessage.text } : null,
                 time: new Date().toISOString()
             };
 
