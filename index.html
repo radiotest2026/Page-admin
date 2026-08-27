@@ -1054,7 +1054,7 @@
             }
         }
 
-        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً)
+        // 🚀 معالجة وترتيب المنشورات
         function processPostsData(snapshotDocs) {
             const totalEl = document.getElementById('postsTotalCount');
             const listEl = document.getElementById('adminPostsList');
@@ -1224,7 +1224,7 @@
             }
         }
 
-        // 🚀 استعلام الرسائل السريع المستقل (رقم الهاتف صافي ومنسق براحة للعين)
+        // 🚀 معالجة صندوق الرسائل مع جلب محتوى الرسائل الصحيح تماماً
         function processMessagesData(snapshotDocs) {
             allConversations = [];
             const usersList = document.getElementById('inboxUsersList');
@@ -1239,9 +1239,8 @@
             }
 
             snapshotDocs.forEach(doc => {
-                const data = doc.data ? doc.data() : doc;
-                const id = doc.id ? doc.id : (data.id || Math.random());
-                allConversations.push({ id, ...data });
+                const data = doc.data();
+                allConversations.push({ id: doc.id, ...data });
             });
 
             allConversations.sort((a, b) => {
@@ -1270,7 +1269,7 @@
                 item.onclick = () => openCustomerChat(data.id);
                 item.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             ${isUnread ? '<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>' : ''}
                             <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
                                 <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
@@ -1603,7 +1602,7 @@
             }
         }
 
-        // 🎯 إضافة حركة السحب (Swipe to Reply) للرسائل زي الماسنجر تماماً
+        // 🎯 عرض الرسائل بدقة تامة ودعم ميزة السحب للرد (Swipe to Reply)
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
@@ -1700,10 +1699,10 @@
                         <div 
                             ontouchstart="handleTouchStart(event, ${idx})"
                             ontouchmove="handleTouchMove(event)"
-                            ontouchend="handleTouchEnd(event, ${idx}, ${isAdmin})"
+                            ontouchend="handleTouchEnd(event, ${idx})"
                             onmousedown="handleMsgTouchStart(${idx}, ${isAdmin})"
                             onmouseup="handleMsgTouchEnd()"
-                            class="msg-bubble-elem ${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble cursor-pointer select-none'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-transform duration-200 shadow-md">
+                            class="${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble cursor-pointer select-none'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-transform duration-200 shadow-md">
                             <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b chat-divider-green">
                                 <span class="font-black flex items-center gap-1.5 ${isAdmin ? 'admin-sender-name' : ''}">
                                     <i class="fas ${isAdmin ? 'fa-user-shield' : 'fa-user'}"></i>
@@ -1722,7 +1721,6 @@
             body.scrollTop = body.scrollHeight;
         }
 
-        // 📱 متغيرات ولغات حركة السحب (Swipe to Reply)
         let touchStartX = 0;
         let currentTouchElement = null;
 
@@ -1735,25 +1733,21 @@
             if (!currentTouchElement) return;
             const currentX = e.touches[0].clientX;
             const diffX = currentX - touchStartX;
-            // حركة سحب خفيفة يمين أو شمال للرسالة
             if (Math.abs(diffX) > 10 && Math.abs(diffX) < 100) {
                 currentTouchElement.target.style.transform = `translateX(${diffX * 0.4}px)`;
             }
         }
 
-        function handleTouchEnd(e, index, isAdmin) {
+        function handleTouchEnd(e, index) {
             if (!currentTouchElement) return;
             const touchEndX = e.changedTouches[0].clientX;
             const diffX = touchEndX - touchStartX;
             
             currentTouchElement.target.style.transform = 'translateX(0)';
 
-            // لو السحب زاد عن 50 بيكسل يمين أو شمال تفعيل وضع الرد فوراً
             if (Math.abs(diffX) > 50) {
                 selectedMessageIndexForAction = index;
                 triggerReplyActiveMessage();
-            } else {
-                // لو سحب بسيط، نعتبرها ضغطة مطولة أو نقرة لإظهار القائمة لو أردت
             }
             currentTouchElement = null;
         }
