@@ -1119,7 +1119,7 @@
                                             <span class="text-[10px] bg-card border px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                                                 <i class="far fa-clock text-amber-400"></i> ${formattedTime}
                                             </span>
-                                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
+                                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -1224,6 +1224,7 @@
             }
         }
 
+        // 🚀 استعلام الرسائل السريع المستقل (رقم الهاتف صافي ومنسق براحة للعين)
         function processMessagesData(snapshotDocs) {
             allConversations = [];
             const usersList = document.getElementById('inboxUsersList');
@@ -1274,7 +1275,7 @@
                             <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
                                 <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                             </span>
-                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
+                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2">
                             ${isUnread ? '<span class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full">رسالة جديدة</span>' : ''}
@@ -1602,6 +1603,7 @@
             }
         }
 
+        // 🎯 إضافة حركة السحب (Swipe to Reply) للرسائل زي الماسنجر تماماً
         function renderActiveChatMessages() {
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
@@ -1610,7 +1612,7 @@
 
             document.getElementById('activeChatTitle').innerHTML = `
                 <span class="font-black text-sm sm:text-base ml-1"><i class="fas fa-user ml-1"></i></span> ${escapeHtml(chat.visitorName || 'زائر')}
-                ${customerPhone ? `<span class="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-lg mr-2 num-en font-bold"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
+                ${customerPhone ? `<span class="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg mr-2 num-en font-bold"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
             `;
 
             document.getElementById('activeChatActions').innerHTML = `
@@ -1696,11 +1698,12 @@
                 return `
                     <div class="flex ${isAdmin ? 'justify-start' : 'justify-end'} w-full">
                         <div 
+                            ontouchstart="handleTouchStart(event, ${idx})"
+                            ontouchmove="handleTouchMove(event)"
+                            ontouchend="handleTouchEnd(event, ${idx}, ${isAdmin})"
                             onmousedown="handleMsgTouchStart(${idx}, ${isAdmin})"
                             onmouseup="handleMsgTouchEnd()"
-                            ontouchstart="handleMsgTouchStart(${idx}, ${isAdmin})"
-                            ontouchend="handleMsgTouchEnd()"
-                            class="${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-all shadow-md">
+                            class="msg-bubble-elem ${isAdmin ? 'chat-admin-bubble cursor-pointer select-none active:scale-[0.98]' : 'chat-user-bubble cursor-pointer select-none'} text-sm sm:text-base px-4 sm:px-5 py-3 rounded-3xl max-w-[92%] sm:max-w-[80%] space-y-1.5 transition-transform duration-200 shadow-md">
                             <div class="flex justify-between items-center gap-4 text-xs pb-1.5 border-b chat-divider-green">
                                 <span class="font-black flex items-center gap-1.5 ${isAdmin ? 'admin-sender-name' : ''}">
                                     <i class="fas ${isAdmin ? 'fa-user-shield' : 'fa-user'}"></i>
@@ -1717,6 +1720,42 @@
                 `;
             }).join('');
             body.scrollTop = body.scrollHeight;
+        }
+
+        // 📱 متغيرات ولغات حركة السحب (Swipe to Reply)
+        let touchStartX = 0;
+        let currentTouchElement = null;
+
+        function handleTouchStart(e, index) {
+            touchStartX = e.touches[0].clientX;
+            currentTouchElement = { index, target: e.currentTarget };
+        }
+
+        function handleTouchMove(e) {
+            if (!currentTouchElement) return;
+            const currentX = e.touches[0].clientX;
+            const diffX = currentX - touchStartX;
+            // حركة سحب خفيفة يمين أو شمال للرسالة
+            if (Math.abs(diffX) > 10 && Math.abs(diffX) < 100) {
+                currentTouchElement.target.style.transform = `translateX(${diffX * 0.4}px)`;
+            }
+        }
+
+        function handleTouchEnd(e, index, isAdmin) {
+            if (!currentTouchElement) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const diffX = touchEndX - touchStartX;
+            
+            currentTouchElement.target.style.transform = 'translateX(0)';
+
+            // لو السحب زاد عن 50 بيكسل يمين أو شمال تفعيل وضع الرد فوراً
+            if (Math.abs(diffX) > 50) {
+                selectedMessageIndexForAction = index;
+                triggerReplyActiveMessage();
+            } else {
+                // لو سحب بسيط، نعتبرها ضغطة مطولة أو نقرة لإظهار القائمة لو أردت
+            }
+            currentTouchElement = null;
         }
 
         function isImageSource(str) {
