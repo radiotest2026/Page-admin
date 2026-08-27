@@ -1054,7 +1054,7 @@
             }
         }
 
-        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً - استعلام سريع منفصل)
+        // 🚀 معالجة وترتيب المنشورات (الأحدث في الأعلى دائماً)
         function processPostsData(snapshotDocs) {
             const totalEl = document.getElementById('postsTotalCount');
             const listEl = document.getElementById('adminPostsList');
@@ -1104,6 +1104,7 @@
 
                         const devId = data.visitorId || data.deviceId || data.authorName;
                         const formattedTime = formatDateCompact(data.createdAt);
+                        const customerPhone = data.phone || data.visitorPhone || data.customerPhone || '';
 
                         card.innerHTML = `
                             <div class="flex justify-between items-start">
@@ -1118,6 +1119,7 @@
                                             <span class="text-[10px] bg-card border px-2 py-0.5 rounded-md font-bold flex items-center gap-1">
                                                 <i class="far fa-clock text-amber-400"></i> ${formattedTime}
                                             </span>
+                                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
                                         </div>
                                     </div>
                                 </div>
@@ -1222,7 +1224,6 @@
             }
         }
 
-        // 🚀 استعلام الرسائل السريع المستقل
         function processMessagesData(snapshotDocs) {
             allConversations = [];
             const usersList = document.getElementById('inboxUsersList');
@@ -1254,6 +1255,7 @@
                 const isUnread = data.isReadByAdmin === false;
                 if (isUnread) unreadCount++;
                 const formattedTime = formatDateCompact(data.updatedAt);
+                const customerPhone = data.phone || data.visitorPhone || data.customerPhone || '';
                 const item = document.createElement('div');
                 
                 let containerClasses = 'p-3.5 rounded-2xl cursor-pointer transition flex flex-col gap-1.5 border relative ';
@@ -1272,6 +1274,7 @@
                             <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
                                 <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                             </span>
+                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2">
                             ${isUnread ? '<span class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full">رسالة جديدة</span>' : ''}
@@ -1297,7 +1300,6 @@
             if (activeChatVisitorId) renderActiveChatMessages();
         }
 
-        // 🚀 استعلامات سريعة ومنفصلة (تمنع التداخل وتعيد الصاروخية لجلب البيانات)
         function initRealtimeListeners() {
             db.collection("posts").onSnapshot((snapshot) => {
                 processPostsData(snapshot.docs);
@@ -1361,7 +1363,6 @@
             }
         }
 
-        // 🚀 استماع منفصل وسريع للتعليقات
         function listenToPendingComments() {
             db.collection("comments_pending")
                 .onSnapshot((snapshot1) => {
@@ -1605,9 +1606,11 @@
             const chat = allConversations.find(c => c.id === activeChatVisitorId);
             if (!chat) return;
             const devId = chat.visitorId || chat.id;
+            const customerPhone = chat.phone || chat.visitorPhone || chat.customerPhone || '';
 
             document.getElementById('activeChatTitle').innerHTML = `
                 <span class="font-black text-sm sm:text-base ml-1"><i class="fas fa-user ml-1"></i></span> ${escapeHtml(chat.visitorName || 'زائر')}
+                ${customerPhone ? `<span class="text-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-lg mr-2 num-en font-bold"><i class="fas fa-phone-alt ml-1"></i>رقم الهاتف للمتابعة: ${escapeHtml(customerPhone)}</span>` : ''}
             `;
 
             document.getElementById('activeChatActions').innerHTML = `
