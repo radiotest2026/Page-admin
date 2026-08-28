@@ -46,10 +46,11 @@
             border-color: #1f2937 !important;
             color: #f1f5f9 !important;
         }
+        /* 🟢 فقاعة الأدمن المريحة للعين (أخضر داكن احترافي) */
         .theme-dark .chat-admin-bubble {
-            background-color: #1e3a8a;
-            color: #ffffff !important;
-            border: 1px solid #3b82f6;
+            background: linear-gradient(135deg, #064e3b, #022c22);
+            color: #ecfdf5 !important;
+            border: 1px solid #059669;
         }
         .theme-dark .chat-user-bubble {
             background-color: #1e293b;
@@ -108,9 +109,9 @@
             border-color: #cbd5e1 !important;
         }
         .theme-light .chat-admin-bubble {
-            background: linear-gradient(135deg, #1e40af, #2563eb) !important;
+            background: linear-gradient(135deg, #065f46, #047857) !important;
             color: #ffffff !important;
-            border: 1px solid #1e40af !important;
+            border: 1px solid #059669 !important;
         }
         .theme-light .chat-admin-bubble * {
             color: #ffffff !important;
@@ -149,7 +150,7 @@
 
         /* 🟢 الخط الفاصل الأخضر الفاتح */
         .chat-divider-green {
-            border-color: #4ade80 !important;
+            border-color: #34d399 !important;
             border-bottom-width: 1px !important;
             opacity: 0.8 !important;
         }
@@ -1277,7 +1278,7 @@
                             <span class="font-bold text-xs sm:text-sm ${isUnread ? 'text-emerald-500 font-black' : 'text-emerald-500'}">
                                 <i class="fas fa-user ${isUnread ? 'text-emerald-500' : 'text-emerald-500'}"></i> ${escapeHtml(data.visitorName || 'عميل')}
                             </span>
-                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
+                            ${customerPhone ? `<span class="text-[10px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md font-bold num-en"><i class="fas fa-phone-alt ml-1"></i>${escapeHtml(customerPhone)}</span>` : ''}
                         </div>
                         <div class="flex items-center gap-2">
                             ${isUnread ? '<span class="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full">رسالة جديدة</span>' : ''}
@@ -1512,7 +1513,6 @@
             cancelReplyMessage();
         }
 
-        // 🟢 إرجاع الضغطة المطولة مع دعم السحب (Swipe to Reply)
         function handleMsgTouchStart(index, isSenderAdmin) {
             pressTimer = setTimeout(() => {
                 selectedMessageIndexForAction = index;
@@ -1606,7 +1606,7 @@
             }
         }
 
-        // متغيرات تتبع السحب (Swipe to Reply)
+        // 📱 متغيرات وحركات السحب (Swipe to Reply) المدمجة بالكامل
         let touchStartX = 0;
         let currentTouchElement = null;
 
